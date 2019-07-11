@@ -1,5 +1,6 @@
 typedef struct {
-	
+	uint8_t stackNum;
+	uint32_t baseStackAddress;
 } TCB_t;
 
 typedef void (*rtosTaskFunc_t)(void *args);
