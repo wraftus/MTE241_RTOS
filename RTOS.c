@@ -8,9 +8,15 @@ uint8_t numTasks = 0;
 uint16_t MAIN_STACK_SIZE = 2048;
 uint16_t TASK_STACK_SIZE = 1024;
 
+uint32_t TIME_SLICE_FREQ = 200;
+
 TCB_t controlBlocks[MAX_NUM_TASKS];
 
-void rtosInit(){
+void SysTick_Handler(void) {
+    //TODO preform context switch to next tasks
+}
+
+void rtosInit(void){
 	for(uint8_t i = 0; i < MAX_NUM_TASKS; i++){
 		//initialize each TCB with their stack number and base stack adress
 		controlBlocks.stackNum = i;
@@ -27,7 +33,10 @@ void rtosInit(){
 	//set PSP to start of main task stack
 	__set_PSP(controlBlocks[0].baseStackAddress);
 	//set SPSEL bit (bit 1) in control register
-	__set_CONTROL(__get_CONTROL & (1 << 1))
+	__set_CONTROL(__get_CONTROL & (1 << 1));
+
+	//Set systick interupt to fire at the time slice frequency
+	SysTick_Config(SystemCoreClock/TIME_SLICE_FREQ);
 }
 
 void rtosThreadNew(rtosTaskFunc_t func, void *arg){

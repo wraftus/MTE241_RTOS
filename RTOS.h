@@ -5,16 +5,16 @@ typedef struct {
 
 typedef void (*rtosTaskFunc_t)(void *args);
 
-typedef uint32_t semaphor_t;
+typedef uint32_t semaphore_t;
 typedef uint32_t mutex_t;
 
-void rtosInit();
+void rtosInit(void);
 
 void rtosThreadNew(rtosTaskFunc_t func, void *arg);
 
-void semaphorInit(semaphor_t *sem, uint32_t val);
-void waitOnSemaphor(semaphor_t *sem);
-void signalSemaphor(semaphor_t *sem);
+void semaphoreInit(semaphor_t *sem, uint32_t val);
+void waitOnSemaphore(semaphor_t *sem);
+void signalSemaphore(semaphor_t *sem);
 
 void mutextInit(mutex_t *mutex);
 void waitOnMutex(mutex_t *mutex);
