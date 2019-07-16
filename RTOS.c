@@ -15,8 +15,8 @@ void SysTick_Handler(void) {
 void rtosInit(void){
 	for(uint8_t i = 0; i < MAX_NUM_TASKS; i++){
 		//initialize each TCB with their stack number and base stack adress
-		controlBlocks.stackNum = i;
-		controlBlocks.stackPointer = __initial_sp - TASK_STACK_SIZE * (MAX_NUM_TASKS - i);
+		controlBlocks[i].stackNum = i;
+		controlBlocks[i].baseStackAddress = __initial_sp - TASK_STACK_SIZE * (MAX_NUM_TASKS - i);
 	}
 
 	//copy over main stack to first task's stack
