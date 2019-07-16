@@ -18,6 +18,7 @@ typedef struct {
 	uint8_t stackNum;
 	uint32_t *stackPointer;
 	taskState_t state;
+	TCB_t *nextTCB;
 } TCB_t;
 
 typedef void (*rtosTaskFunc_t)(void *args);
