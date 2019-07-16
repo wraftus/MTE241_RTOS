@@ -31,6 +31,9 @@ void rtosInit(void){
 	//set SPSEL bit (bit 1) in control register
 	__set_CONTROL(__get_CONTROL & (1 << 1));
 
+	//set main task to running
+	controlBlocks[0].state = RUNNING;
+
 	//Set systick interupt to fire at the time slice frequency
 	SysTick_Config(SystemCoreClock/TIME_SLICE_FREQ);
 }
@@ -55,6 +58,12 @@ void rtosThreadNew(rtosTaskFunc_t func, void *arg){
 	*(newTCB->stackPointer + PC_OFFSET) = func;
 	//set PSR to default value (0x01000000)
 	*(newTCB->stackPointer + PSR_OFFSET) = PSR_DEFAULT;
+
+	//set current task to ready
+	newTCB->status = WAITING;
+
+	//bump up num tasks
+	numTasks++;
 }
 
 void semaphorInit(semaphor_t *sem, uint32_t val){

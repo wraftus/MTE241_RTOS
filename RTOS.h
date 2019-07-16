@@ -12,9 +12,12 @@
 #define PSR_OFFSET 15
 #define PSR_DEFAULT 0x01000000
 
+typedef enum taskState {RUNNING, READY, WAITING, DONE} taskState_t;
+
 typedef struct {
 	uint8_t stackNum;
 	uint32_t *stackPointer;
+	taskState_t state;
 } TCB_t;
 
 typedef void (*rtosTaskFunc_t)(void *args);
