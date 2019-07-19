@@ -1,6 +1,8 @@
-#include "RTOS.h"
 #include <LPC17xx.h>
+#include "RTOS.h"
 #include "context.h"
+#include <stdlib.h>
+#include <string.h>
 
 uint8_t numTasks = 0;
 
@@ -10,7 +12,7 @@ uint32_t TIME_SLICE_TICKS = 5;
 uint32_t rtosTickCounter;
 uint32_t nextTimeSlice;
 
-TCB_t TCBList[MAX_NUM_TASKS];
+TCB_t TCBList[MAX_NUM_TASKS + 1];
 TCB_t *runningTCB;
 TCB_t *readyListHead;
 
@@ -19,7 +21,7 @@ void addToReadyList(TCB_t *tcb){
 		readyListHead = tcb;
 	}
 	else{
-		readyTCB* = readyListHead;
+		TCB_t *readyTCB = readyListHead;
 		while(readyTCB->next != NULL){
 			readyTCB = readyTCB->next;
 		}
@@ -56,28 +58,28 @@ void PendSV_Handler(void){
 }
 
 void rtosInit(void){
-	for(uint8_t i = 0; i < MAX_NUM_TASKS; i++){
+	for(uint8_t i = 0; i <= MAX_NUM_TASKS; i++){
 		//initialize each TCB with their stack number and base stack adress
-		controlBlocks[i].stackNum = i;
-		controlBlocks[i].baseStackAddress = __initial_sp - TASK_STACK_SIZE * (MAX_NUM_TASKS - i);
+		TCBList[i].stackNum = i;
+		TCBList[i].stackPointer = __get_MSP() + TASK_STACK_SIZE * i;
 		TCBList[i].next = NULL;
 	}
 
 	//copy over main stack to first task's stack
 	//TODO not sure what to do if main stack is > 1KiB
 	numTasks = 1;
-	memcpy(TCBList[0].stackPointer, __initial_sp, TASK_STACK_SIZE);
+	memcpy((void *)TCBList[6].stackPointer, (void *)__get_MSP(), MAIN_STACK_SIZE);
 
 	//set MSP to start of Main stack
-	__set_MSP(__initial_sp);
+	__set_MSP(__get_MSP());
 	//set PSP to start of main task stack
-	__set_PSP(TCBList[0].stackPointer);
+	__set_PSP(TCBList[6].stackPointer);
 	//set SPSEL bit (bit 1) in control register
-	__set_CONTROL(__get_CONTROL & (1 << 1));
+	__set_CONTROL(__get_CONTROL() & (1 << 1));
 
 	//set main task to running
-	TCBList[0].state = RUNNING;
-	runningTCB = &(TCBList[0]);
+	TCBList[5].state = RUNNING;
+	runningTCB = &(TCBList[6]);
 
 	//initialize ready list to NULL
 	readyListHead = NULL;
@@ -105,29 +107,29 @@ void rtosThreadNew(rtosTaskFunc_t func, void *arg){
 	TCB_t *newTCB = &(TCBList[numTasks]);
 
 	//set P0 for this task's to arg
-	*(newTCB->stackPointer + P0_OFFSET) = (uint32_t)arg;
+	*((uint32_t *)newTCB->stackPointer + R0_OFFSET) = (uint32_t)arg;
 	//set PC to adress of the taks's function
-	*(newTCB->stackPointer + PC_OFFSET) = func;
+	*((uint32_t *)newTCB->stackPointer + PC_OFFSET) = (uint32_t)func;
 	//set PSR to default value (0x01000000)
-	*(newTCB->stackPointer + PSR_OFFSET) = PSR_DEFAULT;
+	*((uint32_t *)newTCB->stackPointer + PSR_OFFSET) = PSR_DEFAULT;
 
 	//set current task to ready and put it in the list
-	newTCB->status = READY;
+	newTCB->state = READY;
 	addToReadyList(newTCB);
 
 	//bump up num tasks
 	numTasks++;
 }
 
-void semaphorInit(semaphor_t *sem, uint32_t val){
+void semaphorInit(semaphore_t *sem, uint32_t val){
 
 }
 
-void waitOnSemaphor(semaphor_t *sem){
+void waitOnSemaphor(semaphore_t *sem){
 
 }
 
-void signalSemaphor(semaphor_t *sem){
+void signalSemaphor(semaphore_t *sem){
 
 }
 
