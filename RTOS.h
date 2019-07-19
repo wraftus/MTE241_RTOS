@@ -12,6 +12,9 @@
 #define PSR_OFFSET 15
 #define PSR_DEFAULT 0x01000000
 
+//bit mask to set PendSV to pending
+#define PEND_SV_SET (1 << 28)
+
 typedef enum taskState {RUNNING, READY, WAITING, DONE} taskState_t;
 
 typedef struct {
