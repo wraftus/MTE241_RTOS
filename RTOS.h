@@ -1,6 +1,23 @@
+
+#define MAX_NUM_TASKS 6;
+
+#define MAIN_STACK_SIZE 2048;
+#define TASK_STACK_SIZE 1024;
+
+//Position of RO (task paramater) in context "array"
+#define R0_OFFSET 8
+//Position of PC (Program Counter) in context "array"
+#define PC_OFFSET 14
+//Position of PSR (Process Status Register) in context "array"
+#define PSR_OFFSET 15
+#define PSR_DEFAULT 0x01000000
+
+typedef enum taskState {RUNNING, READY, WAITING, DONE} taskState_t;
+
 typedef struct {
 	uint8_t stackNum;
-	uint32_t baseStackAddress;
+	uint32_t *stackPointer;
+	taskState_t state;
 } TCB_t;
 
 typedef void (*rtosTaskFunc_t)(void *args);

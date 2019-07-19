@@ -2,11 +2,7 @@
 #include <LPC17xx.h>
 #include "context.h"
 
-uint8_t MAX_NUM_TASKS = 6;
 uint8_t numTasks = 0;
-
-uint16_t MAIN_STACK_SIZE = 2048;
-uint16_t TASK_STACK_SIZE = 1024;
 
 uint32_t TIME_SLICE_FREQ = 200;
 
@@ -26,21 +22,48 @@ void rtosInit(void){
 	//copy over main stack to first task's stack
 	//TODO not sure what to do if main stack is > 1KiB
 	numTasks = 1;
-	memcpy(controlBlocks[0].baseStackAddress, __initial_sp, TASK_STACK_SIZE);
+	memcpy(controlBlocks[0].stackPointer, __initial_sp, TASK_STACK_SIZE);
 
 	//set MSP to start of Main stack
 	__set_MSP(__initial_sp);
 	//set PSP to start of main task stack
-	__set_PSP(controlBlocks[0].baseStackAddress);
+	__set_PSP(controlBlocks[0].stackPointer);
 	//set SPSEL bit (bit 1) in control register
 	__set_CONTROL(__get_CONTROL & (1 << 1));
+
+	//set main task to running
+	controlBlocks[0].state = RUNNING;
 
 	//Set systick interupt to fire at the time slice frequency
 	SysTick_Config(SystemCoreClock/TIME_SLICE_FREQ);
 }
 
+//TODO will probably need to make this atomic
 void rtosThreadNew(rtosTaskFunc_t func, void *arg){
+	if(numTasks == 0){
+		//rtos has not yet, return and notify somehow???
+		return;
+	}
+	if(numTasks == MAX_NUM_TASKS){
+		//Max number of tasks reached, return and notify somehow???
+		return;
+	}
 
+	//Get next task block
+	TCB_t *newTCB = &(controlBlocks[numTasks]);
+
+	//set P0 for this task's to arg
+	*(newTCB->stackPointer + P0_OFFSET) = (uint32_t)arg;
+	//set PC to adress of the taks's function
+	*(newTCB->stackPointer + PC_OFFSET) = func;
+	//set PSR to default value (0x01000000)
+	*(newTCB->stackPointer + PSR_OFFSET) = PSR_DEFAULT;
+
+	//set current task to ready
+	newTCB->status = WAITING;
+
+	//bump up num tasks
+	numTasks++;
 }
 
 void semaphorInit(semaphor_t *sem, uint32_t val){
