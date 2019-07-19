@@ -36,7 +36,7 @@ void SysTick_Handler(void) {
     	nextTimeSlice += TIME_SLICE_TICKS;
     	if(readyListHead != NULL){
     		//notify PendSV_Handler we are ready to switch
-			SCB->ICSR |= PEND_SV_SET;
+				SCB->ICSR |= SCB_ICSR_PENDSVSET_Msk;
     	}
     }
 }
@@ -47,6 +47,7 @@ void PendSV_Handler(void){
 	storeContext();
 
 	//queue the current running task, pop next task
+	//TODO change state of running task to ready
 	addToReadyList(runningTCB);
 	runningTCB = readyListHead;
 	readyListHead = readyListHead->next;
@@ -98,13 +99,13 @@ void rtosThreadNew(rtosTaskFunc_t func, void *arg){
 		//rtos has not yet, return and notify somehow???
 		return;
 	}
-	if(numTasks == MAX_NUM_TASKS){
+	if(numTasks -1 == MAX_NUM_TASKS){
 		//Max number of tasks reached, return and notify somehow???
 		return;
 	}
 
 	//Get next task block
-	TCB_t *newTCB = &(TCBList[numTasks]);
+	TCB_t *newTCB = &(TCBList[numTasks - 1]);
 
 	//set P0 for this task's to arg
 	*((uint32_t *)newTCB->stackPointer + R0_OFFSET) = (uint32_t)arg;
