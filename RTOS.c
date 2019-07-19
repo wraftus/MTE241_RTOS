@@ -10,6 +10,8 @@ uint32_t TIME_SLICE_TICKS = 5;
 uint32_t rtosTickCounter;
 uint32_t nextTimeSlice;
 
+uint8_t readyToSwitch;
+
 TCB_t TCBList[MAX_NUM_TASKS];
 TCB_t *runningTCB;
 TCB_t *readyListHead;
@@ -31,17 +33,32 @@ void SysTick_Handler(void) {
     rtosTickCounter++;
     if(rtosTickCounter - nextTimeSlice >= TIME_SLICE_TICKS){
     	//we are ready to move to the next task
+    	nextTimeSlice += TIME_SLICE_TICKS;
     	if(readyListHead != NULL){
-    		//TODO store current context
-
-    		//queue the current running task, pop next task
-    		addToReadyList(runningTCB);
-    		runningTCB = readyListHead;
-    		readyListHead = readyListHead->next;
-
-		    //TODO pop context of next task
+    		//notify PendSV_Handler we are ready to switch
+    		//TODO not sure if PendSV_Handler is called automatically after an interupt,
+    		//or if we have to set a bit to set the IRQ
+    		readyToSwitch = 1;
     	}
     }
+}
+
+void PendSV_Handler(void){
+	//Preform context switch if we are ready to switch tasks
+	if(readyToSwitch){
+		//software store context of current running task
+		storeContext();
+
+		//queue the current running task, pop next task
+		addToReadyList(runningTCB);
+		runningTCB = readyListHead;
+		readyListHead = readyListHead->next;
+		runningTCB->next = NULL;
+
+		//software restore context of next task
+		restoreContext(runningTCB->stackPointer);
+		readyToSwitch = 0;
+	}
 }
 
 void rtosInit(void){
@@ -74,6 +91,9 @@ void rtosInit(void){
 	//set up timer variables
 	rtosTickCounter = 0;
 	nextTimeSlice = TIME_SLICE_TICKS;
+
+	//set ready to switch to false
+	readyToSwitch = 0;
 
 	//Set systick interupt to fire at the time slice frequency
 	SysTick_Config(SystemCoreClock/RTOS_TICK_FREQ);
