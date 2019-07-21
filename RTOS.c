@@ -61,7 +61,7 @@ void PendSV_Handler(void){
 void rtosInit(void){
 	for(uint8_t i = 0; i <= MAX_NUM_TASKS; i++){
 		//initialize each TCB with their stack number and base stack adress
-		TCBList[i].stackNum = i;
+		TCBList[i].id = i;
 		TCBList[i].stackPointer = __get_MSP() + TASK_STACK_SIZE * i;
 		TCBList[i].next = NULL;
 	}
@@ -143,13 +143,26 @@ void signalSemaphor(semaphore_t *sem){
 }
 
 void mutextInit(mutex_t *mutex){
+	*mutex = -1;
+}
+
+void aquireMutex(mutex_t *mutex){
+	__disable_irq();
+	while(*mutex != -1){
+		__enable_irq();
+		__disable_irq();
+	}
+	*mutex = runningTCB->id;
+	__enable_irq();
 
 }
 
-void waitOnMutex(mutex_t *mutex){
-
-}
-
-void signalMutex(mutex_t *mutex){
-
+void releaseMutex(mutex_t *mutex){
+	if(*mutex != runningTCB->id){
+		//cannot release a mutex you do not own
+		return;
+	}
+	__disable_irq();
+	*sem = -1;
+	__enable_irq();
 }

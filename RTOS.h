@@ -15,7 +15,7 @@ typedef enum taskState_t {RUNNING, READY, WAITING, DONE} taskState_t;
 
 typedef struct TCB_t TCB_t;
 struct TCB_t{
-	uint8_t stackNum;
+	uint8_t id;
 	uint32_t stackPointer;
 	taskState_t state;
 	TCB_t *next;
@@ -24,10 +24,7 @@ struct TCB_t{
 typedef void (*rtosTaskFunc_t)(void *args);
 
 typedef uint8_t semaphore_t;
-typedef struct {
-	uint8_t count;
-	uint8_t owner;
-} mutex_t;
+typedef int8_t mutex_t;
 
 void rtosInit(void);
 
@@ -38,5 +35,5 @@ void waitOnSemaphore(semaphore_t *sem);
 void signalSemaphore(semaphore_t *sem);
 
 void mutextInit(mutex_t *mutex);
-void waitOnMutex(mutex_t *mutex);
-void signalMutex(mutex_t *mutex);
+void aquireMutex(mutex_t *mutex);
+void releaseMutex(mutex_t *mutex);
