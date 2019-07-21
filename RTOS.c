@@ -46,7 +46,7 @@ void PendSV_Handler(void){
 	//Preform context switch if we are ready to switch tasks
 	//software store context of current running task
 	runningTCB->stackPointer = storeContext();
-	
+
 	//queue the current running task, pop next task
 	//TODO change state of running task to ready
 	addToReadyList(runningTCB);
@@ -63,7 +63,7 @@ void PendSV_Handler(void){
 void rtosInit(void){
 	for(uint8_t i = 0; i < MAX_NUM_TASKS; i++){
 		//initialize each TCB with their stack number and base stack adress
-		TCBList[i].stackNum = i;
+		TCBList[i].id = i;
 		TCBList[i].stackPointer = TCBList[i].baseOfStack = *((uint32_t *)SCB->VTOR) - MAIN_TASK_SIZE - TASK_STACK_SIZE * (MAX_NUM_TASKS - 1 - i);
 		TCBList[i].next = NULL;
 		TCBList[i].state = SUSPENDED;
@@ -76,7 +76,7 @@ void rtosInit(void){
 
 	//change main stack pointer to be inside init
 	TCBList[MAIN_TASK_ID].stackPointer = TCBList[MAIN_TASK_ID].baseOfStack - ((*((uint32_t *)SCB->VTOR)) - __get_MSP());
-	
+
 	//set MSP to start of Main stack
 	__set_MSP(*((uint32_t*)SCB->VTOR));
 	//set SPSEL bit (bit 1) in control register
@@ -149,13 +149,26 @@ void signalSemaphor(semaphore_t *sem){
 }
 
 void mutextInit(mutex_t *mutex){
+	*mutex = -1;
+}
+
+void aquireMutex(mutex_t *mutex){
+	__disable_irq();
+	while(*mutex != -1){
+		__enable_irq();
+		__disable_irq();
+	}
+	*mutex = runningTCB->id;
+	__enable_irq();
 
 }
 
-void waitOnMutex(mutex_t *mutex){
-
-}
-
-void signalMutex(mutex_t *mutex){
-
+void releaseMutex(mutex_t *mutex){
+	if(*mutex != runningTCB->id){
+		//cannot release a mutex you do not own
+		return;
+	}
+	__disable_irq();
+	*sem = -1;
+	__enable_irq();
 }
