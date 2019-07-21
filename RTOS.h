@@ -26,14 +26,17 @@ struct TCB_t{
 
 typedef void (*rtosTaskFunc_t)(void *args);
 
-typedef uint32_t semaphore_t;
-typedef uint32_t mutex_t;
+typedef uint8_t semaphore_t;
+typedef struct {
+	uint8_t count;
+	uint8_t owner;
+} mutex_t;
 
 void rtosInit(void);
 
 void rtosThreadNew(rtosTaskFunc_t func, void *arg);
 
-void semaphoreInit(semaphore_t *sem, uint32_t val);
+void semaphoreInit(semaphore_t *sem, uint32_t count);
 void waitOnSemaphore(semaphore_t *sem);
 void signalSemaphore(semaphore_t *sem);
 

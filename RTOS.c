@@ -128,16 +128,24 @@ void rtosThreadNew(rtosTaskFunc_t func, void *arg){
 	numTasks++;
 }
 
-void semaphorInit(semaphore_t *sem, uint32_t val){
-
+void semaphorInit(semaphore_t *sem, uint8_t count){
+	*sem = val;
 }
 
 void waitOnSemaphor(semaphore_t *sem){
-
+	__disable_irq();
+	while(*sem <= 0){
+		__enable_irq();
+		__disable_irq();
+	}
+	(*sem)++;
+	__enable_irq();
 }
 
 void signalSemaphor(semaphore_t *sem){
-
+	__disable_irq();
+	(*sem)++;
+	__enable_irq();
 }
 
 void mutextInit(mutex_t *mutex){
