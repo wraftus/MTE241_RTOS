@@ -1,4 +1,5 @@
 #include <LPC17xx.h>
+#include <core_cm3.h>
 #include "RTOS.h"
 #include "context.h"
 #include <stdlib.h>
@@ -12,7 +13,7 @@ uint32_t TIME_SLICE_TICKS = 5;
 uint32_t rtosTickCounter;
 uint32_t nextTimeSlice;
 
-TCB_t TCBList[MAX_NUM_TASKS + 1];
+TCB_t TCBList[MAX_NUM_TASKS];
 TCB_t *runningTCB;
 TCB_t *readyListHead;
 
@@ -62,8 +63,8 @@ void SysTick_Handler(void) {
 void PendSV_Handler(void){
 	//Preform context switch if we are ready to switch tasks
 	//software store context of current running task
-	storeContext();
-
+	runningTCB->stackPointer = storeContext();
+	
 	//queue the current running task, pop next task
 	//TODO change state of running task to ready
 	if(runningTCB0->state != WAITING){
@@ -72,35 +73,40 @@ void PendSV_Handler(void){
 	runningTCB = readyListHead;
 	readyListHead = readyListHead->next;
 	runningTCB->next = NULL;
-	__set_PSP(runningTCB->stackPointer);
 
 	//software restore context of next task
+	__set_PSP(runningTCB->stackPointer);
 	restoreContext(runningTCB->stackPointer);
+
 }
 
 void rtosInit(void){
-	for(uint8_t i = 0; i <= MAX_NUM_TASKS; i++){
+	for(uint8_t i = 0; i < MAX_NUM_TASKS; i++){
 		//initialize each TCB with their stack number and base stack adress
 		TCBList[i].id = i;
-		TCBList[i].stackPointer = __get_MSP() + TASK_STACK_SIZE * i;
+		TCBList[i].stackPointer = TCBList[i].baseOfStack = *((uint32_t *)SCB->VTOR) - MAIN_TASK_SIZE - TASK_STACK_SIZE * (MAX_NUM_TASKS - 1 - i);
 		TCBList[i].next = NULL;
+		TCBList[i].state = SUSPENDED;
 	}
 
 	//copy over main stack to first task's stack
 	//TODO not sure what to do if main stack is > 1KiB
 	numTasks = 1;
-	memcpy((void *)TCBList[6].stackPointer, (void *)__get_MSP(), MAIN_STACK_SIZE);
+	memcpy((void *)(TCBList[MAIN_TASK_ID].stackPointer - TASK_STACK_SIZE), (void *)((*((uint32_t *)SCB->VTOR)) - TASK_STACK_SIZE), TASK_STACK_SIZE);
 
+	//change main stack pointer to be inside init
+	TCBList[MAIN_TASK_ID].stackPointer = TCBList[MAIN_TASK_ID].baseOfStack - ((*((uint32_t *)SCB->VTOR)) - __get_MSP());
+	
 	//set MSP to start of Main stack
-	__set_MSP(__get_MSP());
-	//set PSP to start of main task stack
-	__set_PSP(TCBList[6].stackPointer);
+	__set_MSP(*((uint32_t*)SCB->VTOR));
 	//set SPSEL bit (bit 1) in control register
-	__set_CONTROL(__get_CONTROL() & (1 << 1));
+	__set_CONTROL(__get_CONTROL() | CONTROL_SPSEL_Msk);
+	//set PSP to start of main task stack
+	__set_PSP(TCBList[MAIN_TASK_ID].stackPointer);
 
 	//set main task to running
-	TCBList[5].state = RUNNING;
-	runningTCB = &(TCBList[6]);
+	TCBList[MAIN_TASK_ID].state = RUNNING;
+	runningTCB = &(TCBList[MAIN_TASK_ID]);
 
 	//initialize ready list to NULL
 	readyListHead = NULL;
@@ -119,13 +125,13 @@ void rtosThreadNew(rtosTaskFunc_t func, void *arg){
 		//rtos has not yet, return and notify somehow???
 		return;
 	}
-	if(numTasks -1 == MAX_NUM_TASKS){
+	if(numTasks == MAX_NUM_TASKS){
 		//Max number of tasks reached, return and notify somehow???
 		return;
 	}
 
 	//Get next task block
-	TCB_t *newTCB = &(TCBList[numTasks - 1]);
+	TCB_t *newTCB = &(TCBList[numTasks]);
 
 	//set P0 for this task's to arg
 	*((uint32_t *)newTCB->stackPointer + R0_OFFSET) = (uint32_t)arg;

@@ -1,7 +1,8 @@
 #define MAX_NUM_TASKS 6
+#define MAIN_TASK_ID 0
 
-#define MAIN_STACK_SIZE 2048
 #define TASK_STACK_SIZE 1024
+#define MAIN_TASK_SIZE 2048 
 
 //Position of RO (task paramater) in context "array"
 #define R0_OFFSET 8
@@ -11,11 +12,13 @@
 #define PSR_OFFSET 15
 #define PSR_DEFAULT 0x01000000
 
-typedef enum taskState_t {RUNNING, READY, WAITING, DONE} taskState_t;
+
+typedef enum {RUNNING, READY, WAITING, SUSPENDED} taskState_t;
 
 typedef struct TCB_t TCB_t;
 struct TCB_t{
 	uint8_t id;
+	uint32_t baseOfStack;
 	uint32_t stackPointer;
 	taskState_t state;
 	TCB_t *next;
