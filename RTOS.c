@@ -48,11 +48,8 @@ void PendSV_Handler(void){
 	runningTCB->stackPointer = storeContext();
 	
 	//queue the current running task, pop next task
-	if(runningTCB->state != WAITING){
-		addToList(runningTCB, &readyListHead);
-		runningTCB->state = READY;
-	}
-
+	//TODO change state of running task to ready
+	addToReadyList(runningTCB);
 	runningTCB = readyListHead;
 	readyListHead = readyListHead->next;
 	runningTCB->next = NULL;
@@ -125,7 +122,7 @@ void rtosThreadNew(rtosTaskFunc_t func, void *arg){
 
 	//set current task to ready and put it in the list
 	newTCB->state = READY;
-  addToList(newTCB, &readyListHead);
+	addToReadyList(newTCB);
 
 	//bump up num tasks
 	numTasks++;
@@ -136,27 +133,11 @@ void semaphorInit(semaphore_t *sem, uint32_t val){
 }
 
 void waitOnSemaphor(semaphore_t *sem){
-	__disable_irq();
-	if(sem->count == 0){
-		//semaphore is closed, wait until it is signalled
-		addToList(runningTCB, &(sem->waitListHead));
-		runningTCB->state = WAITING;
-	}
-	else{
-		sem->count--;
-	}
-	__enable_irq();
+
 }
 
 void signalSemaphor(semaphore_t *sem){
-	__disable_irq();
-	sem->count++;
-	if(sem->waitListHead != NULL){
-		addToList(sem->waitListHead, &readyListHead);
-		sem->waitListHead->state = READY;
-		sem->waitListHead = sem->waitListHead->next;
-	}
-	__enable_irq();
+
 }
 
 void mutextInit(mutex_t *mutex){
@@ -167,12 +148,6 @@ void waitOnMutex(mutex_t *mutex){
 
 }
 
-void releaseMutex(mutex_t *mutex){
-	if(*mutex != runningTCB->id){
-		//cannot release a mutex you do not own
-		return;
-	}
-	__disable_irq();
-	*mutex = -1;
-	__enable_irq();
+void signalMutex(mutex_t *mutex){
+
 }
