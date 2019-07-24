@@ -66,9 +66,9 @@ void PendSV_Handler(void){
 	runningTCB->stackPointer = storeContext();
 	
 	//queue the current running task, pop next task
-	if(runningTCB->state != WAITING){
-		addToList(runningTCB, &readyListHead);
-		runningTCB->state = READY;
+	//TODO change state of running task to ready
+	if(runningTCB0->state != WAITING){
+		addToList(runningTCB, readyListHead);
 	}
 	runningTCB = readyListHead;
 	readyListHead = readyListHead->next;
@@ -83,8 +83,13 @@ void PendSV_Handler(void){
 void rtosInit(void){
 	for(uint8_t i = 0; i < MAX_NUM_TASKS; i++){
 		//initialize each TCB with their stack number and base stack adress
+<<<<<<< HEAD
 		TCBList[i].id = i;
+		TCBList[i].stackPointer = __get_MSP() + TASK_STACK_SIZE * i;
+=======
+		TCBList[i].stackNum = i;
 		TCBList[i].stackPointer = TCBList[i].baseOfStack = *((uint32_t *)SCB->VTOR) - MAIN_TASK_SIZE - TASK_STACK_SIZE * (MAX_NUM_TASKS - 1 - i);
+>>>>>>> master
 		TCBList[i].next = NULL;
 		TCBList[i].state = SUSPENDED;
 	}
@@ -142,7 +147,7 @@ void rtosThreadNew(rtosTaskFunc_t func, void *arg){
 
 	//set current task to ready and put it in the list
 	newTCB->state = READY;
-	addToList(newTCB, &readyListHead);
+	addToList(newTCB, readyListHead);
 
 	//bump up num tasks
 	numTasks++;
@@ -157,7 +162,7 @@ void waitOnSemaphor(semaphore_t *sem){
 	__disable_irq();
 	if(sem->count == 0){
 		//semaphore is closed, wait until it is signalled
-		addToList(runningTCB, &(sem->waitListHead));
+		addToList(runningTCB, sem->waitListHead);
 		runningTCB->state = WAITING;
 	}
 	else{
@@ -170,7 +175,7 @@ void signalSemaphor(semaphore_t *sem){
 	__disable_irq();
 	sem->count++;
 	if(sem->waitListHead != NULL){
-		addToList(sem->waitListHead, &readyListHead);
+		addToList(sem->waitListHead, readyListHead);
 		sem->waitListHead->state = READY;
 		sem->waitListHead = sem->waitListHead->next;
 	}
@@ -198,6 +203,6 @@ void releaseMutex(mutex_t *mutex){
 		return;
 	}
 	__disable_irq();
-	*mutex = -1;
+	*sem = -1;
 	__enable_irq();
 }
