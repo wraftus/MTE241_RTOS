@@ -14,6 +14,9 @@ Section Cross References
     retarget.o(i.sendchar) refers to uart.o(i.UARTInit) for UARTInit
     retarget.o(i.sendchar) refers to uart.o(i.UARTSendChar) for UARTSendChar
     retarget.o(i.sendchar) refers to retarget.o(.data) for uart_init_called
+    rtos.o(i.PendSV_Handler) refers to context.o(.emb_text) for storeContext
+    rtos.o(i.PendSV_Handler) refers to rtos.o(i.addToReadyList) for addToReadyList
+    rtos.o(i.PendSV_Handler) refers to rtos.o(.data) for runningTCB
     rtos.o(i.SysTick_Handler) refers to rtos.o(.data) for rtosTickCounter
     rtos.o(i.addToReadyList) refers to rtos.o(.data) for readyListHead
     rtos.o(i.rtosInit) refers to rt_memcpy_v6.o(.text) for __aeabi_memcpy
@@ -184,7 +187,6 @@ Section Cross References
 
 Removing Unused input sections from the image.
 
-    Removing context.o(.emb_text), (20 bytes).
     Removing retarget.o(i._ttywrch), (12 bytes).
     Removing retarget.o(i.fgetc), (20 bytes).
     Removing retarget.o(i.getkey), (36 bytes).
@@ -214,7 +216,7 @@ Removing Unused input sections from the image.
     Removing system_lpc17xx.o(.rrx_text), (6 bytes).
     Removing system_lpc17xx.o(i.SystemCoreClockUpdate), (424 bytes).
 
-29 unused section(s) (total 1008 bytes) removed from the image.
+28 unused section(s) (total 988 bytes) removed from the image.
 
 ==============================================================================
 
@@ -225,62 +227,62 @@ Image Symbol Table
     Symbol Name                              Value     Ov Type        Size  Object(Section)
 
     RESET                                    0x00000000   Section      204  startup_lpc17xx.o(RESET)
-    ../clib/angel/boardlib.s                 0x00000000   Number         0  boardshut.o ABSOLUTE
-    ../clib/angel/boardlib.s                 0x00000000   Number         0  boardinit1.o ABSOLUTE
     ../clib/angel/boardlib.s                 0x00000000   Number         0  boardinit2.o ABSOLUTE
+    ../clib/angel/boardlib.s                 0x00000000   Number         0  boardinit1.o ABSOLUTE
+    ../clib/angel/boardlib.s                 0x00000000   Number         0  boardshut.o ABSOLUTE
     ../clib/angel/boardlib.s                 0x00000000   Number         0  boardinit3.o ABSOLUTE
     ../clib/angel/handlers.s                 0x00000000   Number         0  __scatter_zi.o ABSOLUTE
     ../clib/angel/handlers.s                 0x00000000   Number         0  __scatter_copy.o ABSOLUTE
     ../clib/angel/kernel.s                   0x00000000   Number         0  __rtentry4.o ABSOLUTE
-    ../clib/angel/kernel.s                   0x00000000   Number         0  __rtentry2.o ABSOLUTE
     ../clib/angel/kernel.s                   0x00000000   Number         0  rtexit2.o ABSOLUTE
-    ../clib/angel/kernel.s                   0x00000000   Number         0  rtexit.o ABSOLUTE
     ../clib/angel/kernel.s                   0x00000000   Number         0  __rtentry.o ABSOLUTE
+    ../clib/angel/kernel.s                   0x00000000   Number         0  __rtentry2.o ABSOLUTE
+    ../clib/angel/kernel.s                   0x00000000   Number         0  rtexit.o ABSOLUTE
     ../clib/angel/rt.s                       0x00000000   Number         0  rt_div0.o ABSOLUTE
-    ../clib/angel/rt.s                       0x00000000   Number         0  rt_raise.o ABSOLUTE
-    ../clib/angel/rt.s                       0x00000000   Number         0  aeabi_ldiv0_sigfpe.o ABSOLUTE
     ../clib/angel/rt.s                       0x00000000   Number         0  aeabi_ldiv0.o ABSOLUTE
+    ../clib/angel/rt.s                       0x00000000   Number         0  aeabi_ldiv0_sigfpe.o ABSOLUTE
+    ../clib/angel/rt.s                       0x00000000   Number         0  rt_raise.o ABSOLUTE
     ../clib/angel/scatter.s                  0x00000000   Number         0  __scatter.o ABSOLUTE
     ../clib/angel/startup.s                  0x00000000   Number         0  __main.o ABSOLUTE
     ../clib/angel/sys.s                      0x00000000   Number         0  sys_stackheap_outer.o ABSOLUTE
-    ../clib/angel/sys.s                      0x00000000   Number         0  libspace.o ABSOLUTE
-    ../clib/angel/sys.s                      0x00000000   Number         0  indicate_semi.o ABSOLUTE
     ../clib/angel/sys.s                      0x00000000   Number         0  use_no_semi.o ABSOLUTE
+    ../clib/angel/sys.s                      0x00000000   Number         0  indicate_semi.o ABSOLUTE
+    ../clib/angel/sys.s                      0x00000000   Number         0  libspace.o ABSOLUTE
     ../clib/angel/sysapp.c                   0x00000000   Number         0  sys_command.o ABSOLUTE
-    ../clib/armsys.c                         0x00000000   Number         0  argv_veneer.o ABSOLUTE
-    ../clib/armsys.c                         0x00000000   Number         0  _get_argv_nomalloc.o ABSOLUTE
     ../clib/armsys.c                         0x00000000   Number         0  no_argv.o ABSOLUTE
+    ../clib/armsys.c                         0x00000000   Number         0  _get_argv_nomalloc.o ABSOLUTE
+    ../clib/armsys.c                         0x00000000   Number         0  argv_veneer.o ABSOLUTE
     ../clib/armsys.c                         0x00000000   Number         0  argv_veneer.o ABSOLUTE
     ../clib/heapalloc.c                      0x00000000   Number         0  hrguard.o ABSOLUTE
     ../clib/heapaux.c                        0x00000000   Number         0  heapauxi.o ABSOLUTE
+    ../clib/libinit.s                        0x00000000   Number         0  libinit2.o ABSOLUTE
     ../clib/libinit.s                        0x00000000   Number         0  libshutdown2.o ABSOLUTE
     ../clib/libinit.s                        0x00000000   Number         0  libinit.o ABSOLUTE
-    ../clib/libinit.s                        0x00000000   Number         0  libinit2.o ABSOLUTE
     ../clib/libinit.s                        0x00000000   Number         0  libshutdown.o ABSOLUTE
     ../clib/longlong.s                       0x00000000   Number         0  lludivv7m.o ABSOLUTE
     ../clib/memcpset.s                       0x00000000   Number         0  rt_memcpy_w.o ABSOLUTE
     ../clib/memcpset.s                       0x00000000   Number         0  rt_memcpy_v6.o ABSOLUTE
-    ../clib/printf.c                         0x00000000   Number         0  noretval__2printf.o ABSOLUTE
-    ../clib/printf.c                         0x00000000   Number         0  __2printf.o ABSOLUTE
-    ../clib/printf.c                         0x00000000   Number         0  __printf_nopercent.o ABSOLUTE
     ../clib/printf.c                         0x00000000   Number         0  _printf_char_common.o ABSOLUTE
+    ../clib/printf.c                         0x00000000   Number         0  __2printf.o ABSOLUTE
+    ../clib/printf.c                         0x00000000   Number         0  noretval__2printf.o ABSOLUTE
     ../clib/printf.c                         0x00000000   Number         0  _printf_char_file.o ABSOLUTE
-    ../clib/signal.c                         0x00000000   Number         0  defsig_segv_inner.o ABSOLUTE
-    ../clib/signal.c                         0x00000000   Number         0  defsig_rtmem_outer.o ABSOLUTE
-    ../clib/signal.c                         0x00000000   Number         0  defsig_rtmem_formal.o ABSOLUTE
-    ../clib/signal.c                         0x00000000   Number         0  defsig_fpe_outer.o ABSOLUTE
+    ../clib/printf.c                         0x00000000   Number         0  __printf_nopercent.o ABSOLUTE
+    ../clib/signal.c                         0x00000000   Number         0  defsig_stak_inner.o ABSOLUTE
     ../clib/signal.c                         0x00000000   Number         0  defsig_fpe_formal.o ABSOLUTE
+    ../clib/signal.c                         0x00000000   Number         0  defsig_fpe_outer.o ABSOLUTE
+    ../clib/signal.c                         0x00000000   Number         0  defsig_fpe_inner.o ABSOLUTE
     ../clib/signal.c                         0x00000000   Number         0  defsig_other.o ABSOLUTE
+    ../clib/signal.c                         0x00000000   Number         0  defsig_segv_inner.o ABSOLUTE
     ../clib/signal.c                         0x00000000   Number         0  defsig_cppl_inner.o ABSOLUTE
     ../clib/signal.c                         0x00000000   Number         0  defsig_pvfn_inner.o ABSOLUTE
-    ../clib/signal.c                         0x00000000   Number         0  defsig_general.o ABSOLUTE
-    ../clib/signal.c                         0x00000000   Number         0  defsig_stak_inner.o ABSOLUTE
-    ../clib/signal.c                         0x00000000   Number         0  __raise.o ABSOLUTE
-    ../clib/signal.c                         0x00000000   Number         0  defsig_fpe_inner.o ABSOLUTE
-    ../clib/signal.c                         0x00000000   Number         0  defsig_exit.o ABSOLUTE
-    ../clib/signal.c                         0x00000000   Number         0  defsig_abrt_inner.o ABSOLUTE
+    ../clib/signal.c                         0x00000000   Number         0  defsig_rtmem_formal.o ABSOLUTE
+    ../clib/signal.c                         0x00000000   Number         0  defsig_rtmem_outer.o ABSOLUTE
     ../clib/signal.c                         0x00000000   Number         0  defsig_rtred_inner.o ABSOLUTE
+    ../clib/signal.c                         0x00000000   Number         0  defsig_abrt_inner.o ABSOLUTE
     ../clib/signal.c                         0x00000000   Number         0  defsig_rtmem_inner.o ABSOLUTE
+    ../clib/signal.c                         0x00000000   Number         0  defsig_general.o ABSOLUTE
+    ../clib/signal.c                         0x00000000   Number         0  __raise.o ABSOLUTE
+    ../clib/signal.c                         0x00000000   Number         0  defsig_exit.o ABSOLUTE
     ../clib/signal.s                         0x00000000   Number         0  defsig.o ABSOLUTE
     ../clib/stdlib.c                         0x00000000   Number         0  exit.o ABSOLUTE
     ../fplib/fpinit.s                        0x00000000   Number         0  fpinit.o ABSOLUTE
@@ -342,54 +344,55 @@ Image Symbol Table
     .ARM.Collect$$rtexit$$00000002           0x0000015c   Section        0  rtexit2.o(.ARM.Collect$$rtexit$$00000002)
     .ARM.Collect$$rtexit$$00000003           0x0000015c   Section        4  rtexit2.o(.ARM.Collect$$rtexit$$00000003)
     .ARM.Collect$$rtexit$$00000004           0x00000160   Section        6  rtexit2.o(.ARM.Collect$$rtexit$$00000004)
-    .text                                    0x00000168   Section       60  startup_lpc17xx.o(.text)
-    .text                                    0x000001a4   Section        0  noretval__2printf.o(.text)
-    .text                                    0x000001bc   Section      138  rt_memcpy_v6.o(.text)
-    .text                                    0x00000246   Section        0  heapauxi.o(.text)
-    .text                                    0x0000024c   Section        0  _printf_char_file.o(.text)
-    .text                                    0x00000270   Section      100  rt_memcpy_w.o(.text)
-    .text                                    0x000002d4   Section        0  __printf_nopercent.o(.text)
+    .emb_text                                0x00000168   Section       20  context.o(.emb_text)
+    .text                                    0x0000017c   Section       60  startup_lpc17xx.o(.text)
+    .text                                    0x000001b8   Section        0  noretval__2printf.o(.text)
+    .text                                    0x000001d0   Section      138  rt_memcpy_v6.o(.text)
+    .text                                    0x0000025a   Section        0  heapauxi.o(.text)
+    .text                                    0x00000260   Section        0  _printf_char_file.o(.text)
+    .text                                    0x00000284   Section      100  rt_memcpy_w.o(.text)
+    .text                                    0x000002e8   Section        0  exit.o(.text)
     .ARM.__at_0x02FC                         0x000002fc   Section        4  startup_lpc17xx.o(.ARM.__at_0x02FC)
     .text                                    0x00000300   Section        0  _printf_char_common.o(.text)
     _printf_input_char                       0x00000301   Thumb Code    10  _printf_char_common.o(.text)
     .text                                    0x00000330   Section       74  sys_stackheap_outer.o(.text)
-    .text                                    0x0000037a   Section        0  exit.o(.text)
-    .text                                    0x0000038c   Section        8  libspace.o(.text)
-    i.Free                                   0x00000394   Section        0  uart.o(i.Free)
-    i.FreeRcv                                0x0000039c   Section        0  uart.o(i.FreeRcv)
-    i.FreeSnd                                0x000003c0   Section        0  uart.o(i.FreeSnd)
-    i.PendSV_Handler                         0x000003e4   Section        0  rtos.o(i.PendSV_Handler)
-    i.SysTick_Handler                        0x000003e8   Section        0  rtos.o(i.SysTick_Handler)
-    i.SystemInit                             0x0000043c   Section        0  system_lpc17xx.o(i.SystemInit)
-    i.UART0_IRQHandler                       0x0000057c   Section        0  uart.o(i.UART0_IRQHandler)
-    i.UART1_IRQHandler                       0x000005e4   Section        0  uart.o(i.UART1_IRQHandler)
-    i.UARTInit                               0x00000654   Section        0  uart.o(i.UARTInit)
-    i.UARTSendChar                           0x00000710   Section        0  uart.o(i.UARTSendChar)
-    i.__NVIC_EnableIRQ                       0x00000734   Section        0  uart.o(i.__NVIC_EnableIRQ)
-    __NVIC_EnableIRQ                         0x00000735   Thumb Code    26  uart.o(i.__NVIC_EnableIRQ)
-    i._sys_exit                              0x0000074e   Section        0  retarget.o(i._sys_exit)
-    i.addToReadyList                         0x00000754   Section        0  rtos.o(i.addToReadyList)
-    i.ferror                                 0x0000077c   Section        0  retarget.o(i.ferror)
-    i.fputc                                  0x00000784   Section        0  retarget.o(i.fputc)
-    i.getFrequency                           0x00000794   Section        0  uart.o(i.getFrequency)
-    i.main                                   0x000007dc   Section        0  main.o(i.main)
-    i.rtosInit                               0x00000828   Section        0  rtos.o(i.rtosInit)
-    i.rtosThreadNew                          0x00000950   Section        0  rtos.o(i.rtosThreadNew)
-    i.sendchar                               0x000009a4   Section        0  retarget.o(i.sendchar)
-    i.task1                                  0x000009e8   Section        0  main.o(i.task1)
-    i.task2                                  0x000009f0   Section        0  main.o(i.task2)
+    .text                                    0x0000037a   Section        0  __printf_nopercent.o(.text)
+    .text                                    0x000003a4   Section        8  libspace.o(.text)
+    i.Free                                   0x000003ac   Section        0  uart.o(i.Free)
+    i.FreeRcv                                0x000003b4   Section        0  uart.o(i.FreeRcv)
+    i.FreeSnd                                0x000003d8   Section        0  uart.o(i.FreeSnd)
+    i.PendSV_Handler                         0x000003fc   Section        0  rtos.o(i.PendSV_Handler)
+    i.SysTick_Handler                        0x00000450   Section        0  rtos.o(i.SysTick_Handler)
+    i.SystemInit                             0x000004a4   Section        0  system_lpc17xx.o(i.SystemInit)
+    i.UART0_IRQHandler                       0x000005e4   Section        0  uart.o(i.UART0_IRQHandler)
+    i.UART1_IRQHandler                       0x0000064c   Section        0  uart.o(i.UART1_IRQHandler)
+    i.UARTInit                               0x000006bc   Section        0  uart.o(i.UARTInit)
+    i.UARTSendChar                           0x00000778   Section        0  uart.o(i.UARTSendChar)
+    i.__NVIC_EnableIRQ                       0x0000079c   Section        0  uart.o(i.__NVIC_EnableIRQ)
+    __NVIC_EnableIRQ                         0x0000079d   Thumb Code    26  uart.o(i.__NVIC_EnableIRQ)
+    i._sys_exit                              0x000007b6   Section        0  retarget.o(i._sys_exit)
+    i.addToReadyList                         0x000007bc   Section        0  rtos.o(i.addToReadyList)
+    i.ferror                                 0x000007e4   Section        0  retarget.o(i.ferror)
+    i.fputc                                  0x000007ec   Section        0  retarget.o(i.fputc)
+    i.getFrequency                           0x000007fc   Section        0  uart.o(i.getFrequency)
+    i.main                                   0x00000844   Section        0  main.o(i.main)
+    i.rtosInit                               0x00000880   Section        0  rtos.o(i.rtosInit)
+    i.rtosThreadNew                          0x000009d4   Section        0  rtos.o(i.rtosThreadNew)
+    i.sendchar                               0x00000a2c   Section        0  retarget.o(i.sendchar)
+    i.task1                                  0x00000a70   Section        0  main.o(i.task1)
+    i.task2                                  0x00000a78   Section        0  main.o(i.task2)
     .data                                    0x10000000   Section       12  retarget.o(.data)
     .data                                    0x1000000c   Section       28  rtos.o(.data)
     .data                                    0x10000028   Section       32  uart.o(.data)
     .data                                    0x10000048   Section        4  system_lpc17xx.o(.data)
-    .bss                                     0x1000004c   Section       96  rtos.o(.bss)
-    .bss                                     0x100000ac   Section      128  uart.o(.bss)
-    .bss                                     0x1000012c   Section       96  libspace.o(.bss)
-    HEAP                                     0x10000190   Section        0  startup_lpc17xx.o(HEAP)
-    STACK                                    0x10000190   Section     8192  startup_lpc17xx.o(STACK)
-    Heap_Mem                                 0x10000190   Data           0  startup_lpc17xx.o(HEAP)
-    Stack_Mem                                0x10000190   Data        8192  startup_lpc17xx.o(STACK)
-    __initial_sp                             0x10002190   Data           0  startup_lpc17xx.o(STACK)
+    .bss                                     0x1000004c   Section      120  rtos.o(.bss)
+    .bss                                     0x100000c4   Section      128  uart.o(.bss)
+    .bss                                     0x10000144   Section       96  libspace.o(.bss)
+    HEAP                                     0x100001a8   Section        0  startup_lpc17xx.o(HEAP)
+    STACK                                    0x100001a8   Section     8192  startup_lpc17xx.o(STACK)
+    Heap_Mem                                 0x100001a8   Data           0  startup_lpc17xx.o(HEAP)
+    Stack_Mem                                0x100001a8   Data        8192  startup_lpc17xx.o(STACK)
+    __initial_sp                             0x100021a8   Data           0  startup_lpc17xx.o(STACK)
 
     Global Symbols
 
@@ -474,90 +477,92 @@ Image Symbol Table
     __rt_exit_ls                             0x0000015d   Thumb Code     0  rtexit2.o(.ARM.Collect$$rtexit$$00000003)
     __rt_exit_prels_1                        0x0000015d   Thumb Code     0  rtexit2.o(.ARM.Collect$$rtexit$$00000002)
     __rt_exit_exit                           0x00000161   Thumb Code     0  rtexit2.o(.ARM.Collect$$rtexit$$00000004)
-    Reset_Handler                            0x00000169   Thumb Code     8  startup_lpc17xx.o(.text)
-    NMI_Handler                              0x00000171   Thumb Code     2  startup_lpc17xx.o(.text)
-    HardFault_Handler                        0x00000173   Thumb Code     2  startup_lpc17xx.o(.text)
-    MemManage_Handler                        0x00000175   Thumb Code     2  startup_lpc17xx.o(.text)
-    BusFault_Handler                         0x00000177   Thumb Code     2  startup_lpc17xx.o(.text)
-    UsageFault_Handler                       0x00000179   Thumb Code     2  startup_lpc17xx.o(.text)
-    SVC_Handler                              0x0000017b   Thumb Code     2  startup_lpc17xx.o(.text)
-    DebugMon_Handler                         0x0000017d   Thumb Code     2  startup_lpc17xx.o(.text)
-    ADC_IRQHandler                           0x00000183   Thumb Code     0  startup_lpc17xx.o(.text)
-    BOD_IRQHandler                           0x00000183   Thumb Code     0  startup_lpc17xx.o(.text)
-    CANActivity_IRQHandler                   0x00000183   Thumb Code     0  startup_lpc17xx.o(.text)
-    CAN_IRQHandler                           0x00000183   Thumb Code     0  startup_lpc17xx.o(.text)
-    DMA_IRQHandler                           0x00000183   Thumb Code     0  startup_lpc17xx.o(.text)
-    EINT0_IRQHandler                         0x00000183   Thumb Code     0  startup_lpc17xx.o(.text)
-    EINT1_IRQHandler                         0x00000183   Thumb Code     0  startup_lpc17xx.o(.text)
-    EINT2_IRQHandler                         0x00000183   Thumb Code     0  startup_lpc17xx.o(.text)
-    EINT3_IRQHandler                         0x00000183   Thumb Code     0  startup_lpc17xx.o(.text)
-    ENET_IRQHandler                          0x00000183   Thumb Code     0  startup_lpc17xx.o(.text)
-    I2C0_IRQHandler                          0x00000183   Thumb Code     0  startup_lpc17xx.o(.text)
-    I2C1_IRQHandler                          0x00000183   Thumb Code     0  startup_lpc17xx.o(.text)
-    I2C2_IRQHandler                          0x00000183   Thumb Code     0  startup_lpc17xx.o(.text)
-    I2S_IRQHandler                           0x00000183   Thumb Code     0  startup_lpc17xx.o(.text)
-    MCPWM_IRQHandler                         0x00000183   Thumb Code     0  startup_lpc17xx.o(.text)
-    PLL0_IRQHandler                          0x00000183   Thumb Code     0  startup_lpc17xx.o(.text)
-    PLL1_IRQHandler                          0x00000183   Thumb Code     0  startup_lpc17xx.o(.text)
-    PWM1_IRQHandler                          0x00000183   Thumb Code     0  startup_lpc17xx.o(.text)
-    QEI_IRQHandler                           0x00000183   Thumb Code     0  startup_lpc17xx.o(.text)
-    RIT_IRQHandler                           0x00000183   Thumb Code     0  startup_lpc17xx.o(.text)
-    RTC_IRQHandler                           0x00000183   Thumb Code     0  startup_lpc17xx.o(.text)
-    SPI_IRQHandler                           0x00000183   Thumb Code     0  startup_lpc17xx.o(.text)
-    SSP0_IRQHandler                          0x00000183   Thumb Code     0  startup_lpc17xx.o(.text)
-    SSP1_IRQHandler                          0x00000183   Thumb Code     0  startup_lpc17xx.o(.text)
-    TIMER0_IRQHandler                        0x00000183   Thumb Code     0  startup_lpc17xx.o(.text)
-    TIMER1_IRQHandler                        0x00000183   Thumb Code     0  startup_lpc17xx.o(.text)
-    TIMER2_IRQHandler                        0x00000183   Thumb Code     0  startup_lpc17xx.o(.text)
-    TIMER3_IRQHandler                        0x00000183   Thumb Code     0  startup_lpc17xx.o(.text)
-    UART2_IRQHandler                         0x00000183   Thumb Code     0  startup_lpc17xx.o(.text)
-    UART3_IRQHandler                         0x00000183   Thumb Code     0  startup_lpc17xx.o(.text)
-    USBActivity_IRQHandler                   0x00000183   Thumb Code     0  startup_lpc17xx.o(.text)
-    USB_IRQHandler                           0x00000183   Thumb Code     0  startup_lpc17xx.o(.text)
-    WDT_IRQHandler                           0x00000183   Thumb Code     0  startup_lpc17xx.o(.text)
-    __user_initial_stackheap                 0x00000185   Thumb Code     0  startup_lpc17xx.o(.text)
-    __2printf                                0x000001a5   Thumb Code    20  noretval__2printf.o(.text)
-    __aeabi_memcpy                           0x000001bd   Thumb Code     0  rt_memcpy_v6.o(.text)
-    __rt_memcpy                              0x000001bd   Thumb Code   138  rt_memcpy_v6.o(.text)
-    _memcpy_lastbytes                        0x00000223   Thumb Code     0  rt_memcpy_v6.o(.text)
-    __use_two_region_memory                  0x00000247   Thumb Code     2  heapauxi.o(.text)
-    __rt_heap_escrow$2region                 0x00000249   Thumb Code     2  heapauxi.o(.text)
-    __rt_heap_expand$2region                 0x0000024b   Thumb Code     2  heapauxi.o(.text)
-    _printf_char_file                        0x0000024d   Thumb Code    32  _printf_char_file.o(.text)
-    __aeabi_memcpy4                          0x00000271   Thumb Code     0  rt_memcpy_w.o(.text)
-    __aeabi_memcpy8                          0x00000271   Thumb Code     0  rt_memcpy_w.o(.text)
-    __rt_memcpy_w                            0x00000271   Thumb Code   100  rt_memcpy_w.o(.text)
-    _memcpy_lastbytes_aligned                0x000002b9   Thumb Code     0  rt_memcpy_w.o(.text)
-    __printf                                 0x000002d5   Thumb Code    40  __printf_nopercent.o(.text)
+    storeContext                             0x00000169   Thumb Code    10  context.o(.emb_text)
+    restoreContext                           0x00000173   Thumb Code    10  context.o(.emb_text)
+    Reset_Handler                            0x0000017d   Thumb Code     8  startup_lpc17xx.o(.text)
+    NMI_Handler                              0x00000185   Thumb Code     2  startup_lpc17xx.o(.text)
+    HardFault_Handler                        0x00000187   Thumb Code     2  startup_lpc17xx.o(.text)
+    MemManage_Handler                        0x00000189   Thumb Code     2  startup_lpc17xx.o(.text)
+    BusFault_Handler                         0x0000018b   Thumb Code     2  startup_lpc17xx.o(.text)
+    UsageFault_Handler                       0x0000018d   Thumb Code     2  startup_lpc17xx.o(.text)
+    SVC_Handler                              0x0000018f   Thumb Code     2  startup_lpc17xx.o(.text)
+    DebugMon_Handler                         0x00000191   Thumb Code     2  startup_lpc17xx.o(.text)
+    ADC_IRQHandler                           0x00000197   Thumb Code     0  startup_lpc17xx.o(.text)
+    BOD_IRQHandler                           0x00000197   Thumb Code     0  startup_lpc17xx.o(.text)
+    CANActivity_IRQHandler                   0x00000197   Thumb Code     0  startup_lpc17xx.o(.text)
+    CAN_IRQHandler                           0x00000197   Thumb Code     0  startup_lpc17xx.o(.text)
+    DMA_IRQHandler                           0x00000197   Thumb Code     0  startup_lpc17xx.o(.text)
+    EINT0_IRQHandler                         0x00000197   Thumb Code     0  startup_lpc17xx.o(.text)
+    EINT1_IRQHandler                         0x00000197   Thumb Code     0  startup_lpc17xx.o(.text)
+    EINT2_IRQHandler                         0x00000197   Thumb Code     0  startup_lpc17xx.o(.text)
+    EINT3_IRQHandler                         0x00000197   Thumb Code     0  startup_lpc17xx.o(.text)
+    ENET_IRQHandler                          0x00000197   Thumb Code     0  startup_lpc17xx.o(.text)
+    I2C0_IRQHandler                          0x00000197   Thumb Code     0  startup_lpc17xx.o(.text)
+    I2C1_IRQHandler                          0x00000197   Thumb Code     0  startup_lpc17xx.o(.text)
+    I2C2_IRQHandler                          0x00000197   Thumb Code     0  startup_lpc17xx.o(.text)
+    I2S_IRQHandler                           0x00000197   Thumb Code     0  startup_lpc17xx.o(.text)
+    MCPWM_IRQHandler                         0x00000197   Thumb Code     0  startup_lpc17xx.o(.text)
+    PLL0_IRQHandler                          0x00000197   Thumb Code     0  startup_lpc17xx.o(.text)
+    PLL1_IRQHandler                          0x00000197   Thumb Code     0  startup_lpc17xx.o(.text)
+    PWM1_IRQHandler                          0x00000197   Thumb Code     0  startup_lpc17xx.o(.text)
+    QEI_IRQHandler                           0x00000197   Thumb Code     0  startup_lpc17xx.o(.text)
+    RIT_IRQHandler                           0x00000197   Thumb Code     0  startup_lpc17xx.o(.text)
+    RTC_IRQHandler                           0x00000197   Thumb Code     0  startup_lpc17xx.o(.text)
+    SPI_IRQHandler                           0x00000197   Thumb Code     0  startup_lpc17xx.o(.text)
+    SSP0_IRQHandler                          0x00000197   Thumb Code     0  startup_lpc17xx.o(.text)
+    SSP1_IRQHandler                          0x00000197   Thumb Code     0  startup_lpc17xx.o(.text)
+    TIMER0_IRQHandler                        0x00000197   Thumb Code     0  startup_lpc17xx.o(.text)
+    TIMER1_IRQHandler                        0x00000197   Thumb Code     0  startup_lpc17xx.o(.text)
+    TIMER2_IRQHandler                        0x00000197   Thumb Code     0  startup_lpc17xx.o(.text)
+    TIMER3_IRQHandler                        0x00000197   Thumb Code     0  startup_lpc17xx.o(.text)
+    UART2_IRQHandler                         0x00000197   Thumb Code     0  startup_lpc17xx.o(.text)
+    UART3_IRQHandler                         0x00000197   Thumb Code     0  startup_lpc17xx.o(.text)
+    USBActivity_IRQHandler                   0x00000197   Thumb Code     0  startup_lpc17xx.o(.text)
+    USB_IRQHandler                           0x00000197   Thumb Code     0  startup_lpc17xx.o(.text)
+    WDT_IRQHandler                           0x00000197   Thumb Code     0  startup_lpc17xx.o(.text)
+    __user_initial_stackheap                 0x00000199   Thumb Code     0  startup_lpc17xx.o(.text)
+    __2printf                                0x000001b9   Thumb Code    20  noretval__2printf.o(.text)
+    __aeabi_memcpy                           0x000001d1   Thumb Code     0  rt_memcpy_v6.o(.text)
+    __rt_memcpy                              0x000001d1   Thumb Code   138  rt_memcpy_v6.o(.text)
+    _memcpy_lastbytes                        0x00000237   Thumb Code     0  rt_memcpy_v6.o(.text)
+    __use_two_region_memory                  0x0000025b   Thumb Code     2  heapauxi.o(.text)
+    __rt_heap_escrow$2region                 0x0000025d   Thumb Code     2  heapauxi.o(.text)
+    __rt_heap_expand$2region                 0x0000025f   Thumb Code     2  heapauxi.o(.text)
+    _printf_char_file                        0x00000261   Thumb Code    32  _printf_char_file.o(.text)
+    __aeabi_memcpy4                          0x00000285   Thumb Code     0  rt_memcpy_w.o(.text)
+    __aeabi_memcpy8                          0x00000285   Thumb Code     0  rt_memcpy_w.o(.text)
+    __rt_memcpy_w                            0x00000285   Thumb Code   100  rt_memcpy_w.o(.text)
+    _memcpy_lastbytes_aligned                0x000002cd   Thumb Code     0  rt_memcpy_w.o(.text)
+    exit                                     0x000002e9   Thumb Code    18  exit.o(.text)
     _printf_char_common                      0x0000030b   Thumb Code    32  _printf_char_common.o(.text)
     __user_setup_stackheap                   0x00000331   Thumb Code    74  sys_stackheap_outer.o(.text)
-    exit                                     0x0000037b   Thumb Code    18  exit.o(.text)
-    __user_libspace                          0x0000038d   Thumb Code     8  libspace.o(.text)
-    __user_perproc_libspace                  0x0000038d   Thumb Code     0  libspace.o(.text)
-    __user_perthread_libspace                0x0000038d   Thumb Code     0  libspace.o(.text)
-    Free                                     0x00000395   Thumb Code     6  uart.o(i.Free)
-    FreeRcv                                  0x0000039d   Thumb Code    28  uart.o(i.FreeRcv)
-    FreeSnd                                  0x000003c1   Thumb Code    28  uart.o(i.FreeSnd)
-    PendSV_Handler                           0x000003e5   Thumb Code     2  rtos.o(i.PendSV_Handler)
-    SysTick_Handler                          0x000003e9   Thumb Code    62  rtos.o(i.SysTick_Handler)
-    SystemInit                               0x0000043d   Thumb Code   302  system_lpc17xx.o(i.SystemInit)
-    UART0_IRQHandler                         0x0000057d   Thumb Code    88  uart.o(i.UART0_IRQHandler)
-    UART1_IRQHandler                         0x000005e5   Thumb Code    90  uart.o(i.UART1_IRQHandler)
-    UARTInit                                 0x00000655   Thumb Code   176  uart.o(i.UARTInit)
-    UARTSendChar                             0x00000711   Thumb Code    26  uart.o(i.UARTSendChar)
-    _sys_exit                                0x0000074f   Thumb Code     4  retarget.o(i._sys_exit)
-    addToReadyList                           0x00000755   Thumb Code    34  rtos.o(i.addToReadyList)
-    ferror                                   0x0000077d   Thumb Code     8  retarget.o(i.ferror)
-    fputc                                    0x00000785   Thumb Code    14  retarget.o(i.fputc)
-    getFrequency                             0x00000795   Thumb Code    62  uart.o(i.getFrequency)
-    main                                     0x000007dd   Thumb Code    50  main.o(i.main)
-    rtosInit                                 0x00000829   Thumb Code   252  rtos.o(i.rtosInit)
-    rtosThreadNew                            0x00000951   Thumb Code    74  rtos.o(i.rtosThreadNew)
-    sendchar                                 0x000009a5   Thumb Code    64  retarget.o(i.sendchar)
-    task1                                    0x000009e9   Thumb Code     8  main.o(i.task1)
-    task2                                    0x000009f1   Thumb Code     8  main.o(i.task2)
-    Region$$Table$$Base                      0x000009f8   Number         0  anon$$obj.o(Region$$Table)
-    Region$$Table$$Limit                     0x00000a18   Number         0  anon$$obj.o(Region$$Table)
+    __printf                                 0x0000037b   Thumb Code    40  __printf_nopercent.o(.text)
+    __user_libspace                          0x000003a5   Thumb Code     8  libspace.o(.text)
+    __user_perproc_libspace                  0x000003a5   Thumb Code     0  libspace.o(.text)
+    __user_perthread_libspace                0x000003a5   Thumb Code     0  libspace.o(.text)
+    Free                                     0x000003ad   Thumb Code     6  uart.o(i.Free)
+    FreeRcv                                  0x000003b5   Thumb Code    28  uart.o(i.FreeRcv)
+    FreeSnd                                  0x000003d9   Thumb Code    28  uart.o(i.FreeSnd)
+    PendSV_Handler                           0x000003fd   Thumb Code    76  rtos.o(i.PendSV_Handler)
+    SysTick_Handler                          0x00000451   Thumb Code    62  rtos.o(i.SysTick_Handler)
+    SystemInit                               0x000004a5   Thumb Code   302  system_lpc17xx.o(i.SystemInit)
+    UART0_IRQHandler                         0x000005e5   Thumb Code    88  uart.o(i.UART0_IRQHandler)
+    UART1_IRQHandler                         0x0000064d   Thumb Code    90  uart.o(i.UART1_IRQHandler)
+    UARTInit                                 0x000006bd   Thumb Code   176  uart.o(i.UARTInit)
+    UARTSendChar                             0x00000779   Thumb Code    26  uart.o(i.UARTSendChar)
+    _sys_exit                                0x000007b7   Thumb Code     4  retarget.o(i._sys_exit)
+    addToReadyList                           0x000007bd   Thumb Code    34  rtos.o(i.addToReadyList)
+    ferror                                   0x000007e5   Thumb Code     8  retarget.o(i.ferror)
+    fputc                                    0x000007ed   Thumb Code    14  retarget.o(i.fputc)
+    getFrequency                             0x000007fd   Thumb Code    62  uart.o(i.getFrequency)
+    main                                     0x00000845   Thumb Code    34  main.o(i.main)
+    rtosInit                                 0x00000881   Thumb Code   296  rtos.o(i.rtosInit)
+    rtosThreadNew                            0x000009d5   Thumb Code    78  rtos.o(i.rtosThreadNew)
+    sendchar                                 0x00000a2d   Thumb Code    64  retarget.o(i.sendchar)
+    task1                                    0x00000a71   Thumb Code     8  main.o(i.task1)
+    task2                                    0x00000a79   Thumb Code     8  main.o(i.task2)
+    Region$$Table$$Base                      0x00000a80   Number         0  anon$$obj.o(Region$$Table)
+    Region$$Table$$Limit                     0x00000aa0   Number         0  anon$$obj.o(Region$$Table)
     uart_init_called                         0x10000000   Data           1  retarget.o(.data)
     __stdout                                 0x10000004   Data           4  retarget.o(.data)
     __stdin                                  0x10000008   Data           4  retarget.o(.data)
@@ -581,11 +586,11 @@ Image Symbol Table
     SndLock1                                 0x10000043   Data           1  uart.o(.data)
     i                                        0x10000044   Data           4  uart.o(.data)
     SystemCoreClock                          0x10000048   Data           4  system_lpc17xx.o(.data)
-    TCBList                                  0x1000004c   Data          96  rtos.o(.bss)
-    UART0Buffer                              0x100000ac   Data          64  uart.o(.bss)
-    UART1Buffer                              0x100000ec   Data          64  uart.o(.bss)
-    __libspace_start                         0x1000012c   Data          96  libspace.o(.bss)
-    __temporary_stack_top$libspace           0x1000018c   Data           0  libspace.o(.bss)
+    TCBList                                  0x1000004c   Data         120  rtos.o(.bss)
+    UART0Buffer                              0x100000c4   Data          64  uart.o(.bss)
+    UART1Buffer                              0x10000104   Data          64  uart.o(.bss)
+    __libspace_start                         0x10000144   Data          96  libspace.o(.bss)
+    __temporary_stack_top$libspace           0x100001a4   Data           0  libspace.o(.bss)
 
 
 
@@ -593,11 +598,11 @@ Image Symbol Table
 
 Memory Map of the image
 
-  Image Entry point : 0x00000169
+  Image Entry point : 0x0000017d
 
-  Load Region LR_1 (Base: 0x00000000, Size: 0x00000a64, Max: 0xffffffff, ABSOLUTE)
+  Load Region LR_1 (Base: 0x00000000, Size: 0x00000aec, Max: 0xffffffff, ABSOLUTE)
 
-    Execution Region ER_RO (Exec base: 0x00000000, Load base: 0x00000000, Size: 0x00000a18, Max: 0xffffffff, ABSOLUTE)
+    Execution Region ER_RO (Exec base: 0x00000000, Load base: 0x00000000, Size: 0x00000aa0, Max: 0xffffffff, ABSOLUTE)
 
     Exec Addr    Load Addr    Size         Type   Attr      Idx    E Section Name        Object
 
@@ -649,67 +654,69 @@ Memory Map of the image
     0x0000015c   0x0000015c   0x00000004   Code   RO          530    .ARM.Collect$$rtexit$$00000003  c_w.l(rtexit2.o)
     0x00000160   0x00000160   0x00000006   Code   RO          531    .ARM.Collect$$rtexit$$00000004  c_w.l(rtexit2.o)
     0x00000166   0x00000166   0x00000002   PAD
-    0x00000168   0x00000168   0x0000003c   Code   RO          372  * .text               startup_lpc17xx.o
-    0x000001a4   0x000001a4   0x00000018   Code   RO          420    .text               c_w.l(noretval__2printf.o)
-    0x000001bc   0x000001bc   0x0000008a   Code   RO          422    .text               c_w.l(rt_memcpy_v6.o)
-    0x00000246   0x00000246   0x00000006   Code   RO          424    .text               c_w.l(heapauxi.o)
-    0x0000024c   0x0000024c   0x00000024   Code   RO          433    .text               c_w.l(_printf_char_file.o)
-    0x00000270   0x00000270   0x00000064   Code   RO          435    .text               c_w.l(rt_memcpy_w.o)
-    0x000002d4   0x000002d4   0x00000028   Code   RO          458    .text               c_w.l(__printf_nopercent.o)
+    0x00000168   0x00000168   0x00000014   Code   RO            1    .emb_text           context.o
+    0x0000017c   0x0000017c   0x0000003c   Code   RO          372  * .text               startup_lpc17xx.o
+    0x000001b8   0x000001b8   0x00000018   Code   RO          420    .text               c_w.l(noretval__2printf.o)
+    0x000001d0   0x000001d0   0x0000008a   Code   RO          422    .text               c_w.l(rt_memcpy_v6.o)
+    0x0000025a   0x0000025a   0x00000006   Code   RO          424    .text               c_w.l(heapauxi.o)
+    0x00000260   0x00000260   0x00000024   Code   RO          433    .text               c_w.l(_printf_char_file.o)
+    0x00000284   0x00000284   0x00000064   Code   RO          435    .text               c_w.l(rt_memcpy_w.o)
+    0x000002e8   0x000002e8   0x00000012   Code   RO          460    .text               c_w.l(exit.o)
+    0x000002fa   0x000002fa   0x00000002   PAD
     0x000002fc   0x000002fc   0x00000004   Code   RO          371    .ARM.__at_0x02FC    startup_lpc17xx.o
     0x00000300   0x00000300   0x00000030   Code   RO          454    .text               c_w.l(_printf_char_common.o)
     0x00000330   0x00000330   0x0000004a   Code   RO          456    .text               c_w.l(sys_stackheap_outer.o)
-    0x0000037a   0x0000037a   0x00000012   Code   RO          460    .text               c_w.l(exit.o)
-    0x0000038c   0x0000038c   0x00000008   Code   RO          472    .text               c_w.l(libspace.o)
-    0x00000394   0x00000394   0x00000006   Code   RO          207    i.Free              uart.o
-    0x0000039a   0x0000039a   0x00000002   PAD
-    0x0000039c   0x0000039c   0x00000024   Code   RO          208    i.FreeRcv           uart.o
-    0x000003c0   0x000003c0   0x00000024   Code   RO          209    i.FreeSnd           uart.o
-    0x000003e4   0x000003e4   0x00000002   Code   RO           87    i.PendSV_Handler    rtos.o
-    0x000003e6   0x000003e6   0x00000002   PAD
-    0x000003e8   0x000003e8   0x00000054   Code   RO           88    i.SysTick_Handler   rtos.o
-    0x0000043c   0x0000043c   0x00000140   Code   RO          382    i.SystemInit        system_lpc17xx.o
-    0x0000057c   0x0000057c   0x00000068   Code   RO          213    i.UART0_IRQHandler  uart.o
-    0x000005e4   0x000005e4   0x00000070   Code   RO          214    i.UART1_IRQHandler  uart.o
-    0x00000654   0x00000654   0x000000bc   Code   RO          215    i.UARTInit          uart.o
-    0x00000710   0x00000710   0x00000024   Code   RO          219    i.UARTSendChar      uart.o
-    0x00000734   0x00000734   0x0000001a   Code   RO          220    i.__NVIC_EnableIRQ  uart.o
-    0x0000074e   0x0000074e   0x00000004   Code   RO           20    i._sys_exit         retarget.o
-    0x00000752   0x00000752   0x00000002   PAD
-    0x00000754   0x00000754   0x00000028   Code   RO           89    i.addToReadyList    rtos.o
-    0x0000077c   0x0000077c   0x00000008   Code   RO           22    i.ferror            retarget.o
-    0x00000784   0x00000784   0x0000000e   Code   RO           24    i.fputc             retarget.o
-    0x00000792   0x00000792   0x00000002   PAD
-    0x00000794   0x00000794   0x00000048   Code   RO          221    i.getFrequency      uart.o
-    0x000007dc   0x000007dc   0x0000004c   Code   RO          327    i.main              main.o
-    0x00000828   0x00000828   0x00000128   Code   RO           91    i.rtosInit          rtos.o
-    0x00000950   0x00000950   0x00000054   Code   RO           92    i.rtosThreadNew     rtos.o
-    0x000009a4   0x000009a4   0x00000044   Code   RO           26    i.sendchar          retarget.o
-    0x000009e8   0x000009e8   0x00000008   Code   RO          328    i.task1             main.o
-    0x000009f0   0x000009f0   0x00000008   Code   RO          329    i.task2             main.o
-    0x000009f8   0x000009f8   0x00000020   Data   RO          595    Region$$Table       anon$$obj.o
+    0x0000037a   0x0000037a   0x00000028   Code   RO          458    .text               c_w.l(__printf_nopercent.o)
+    0x000003a2   0x000003a2   0x00000002   PAD
+    0x000003a4   0x000003a4   0x00000008   Code   RO          472    .text               c_w.l(libspace.o)
+    0x000003ac   0x000003ac   0x00000006   Code   RO          207    i.Free              uart.o
+    0x000003b2   0x000003b2   0x00000002   PAD
+    0x000003b4   0x000003b4   0x00000024   Code   RO          208    i.FreeRcv           uart.o
+    0x000003d8   0x000003d8   0x00000024   Code   RO          209    i.FreeSnd           uart.o
+    0x000003fc   0x000003fc   0x00000054   Code   RO           87    i.PendSV_Handler    rtos.o
+    0x00000450   0x00000450   0x00000054   Code   RO           88    i.SysTick_Handler   rtos.o
+    0x000004a4   0x000004a4   0x00000140   Code   RO          382    i.SystemInit        system_lpc17xx.o
+    0x000005e4   0x000005e4   0x00000068   Code   RO          213    i.UART0_IRQHandler  uart.o
+    0x0000064c   0x0000064c   0x00000070   Code   RO          214    i.UART1_IRQHandler  uart.o
+    0x000006bc   0x000006bc   0x000000bc   Code   RO          215    i.UARTInit          uart.o
+    0x00000778   0x00000778   0x00000024   Code   RO          219    i.UARTSendChar      uart.o
+    0x0000079c   0x0000079c   0x0000001a   Code   RO          220    i.__NVIC_EnableIRQ  uart.o
+    0x000007b6   0x000007b6   0x00000004   Code   RO           20    i._sys_exit         retarget.o
+    0x000007ba   0x000007ba   0x00000002   PAD
+    0x000007bc   0x000007bc   0x00000028   Code   RO           89    i.addToReadyList    rtos.o
+    0x000007e4   0x000007e4   0x00000008   Code   RO           22    i.ferror            retarget.o
+    0x000007ec   0x000007ec   0x0000000e   Code   RO           24    i.fputc             retarget.o
+    0x000007fa   0x000007fa   0x00000002   PAD
+    0x000007fc   0x000007fc   0x00000048   Code   RO          221    i.getFrequency      uart.o
+    0x00000844   0x00000844   0x0000003c   Code   RO          327    i.main              main.o
+    0x00000880   0x00000880   0x00000154   Code   RO           91    i.rtosInit          rtos.o
+    0x000009d4   0x000009d4   0x00000058   Code   RO           92    i.rtosThreadNew     rtos.o
+    0x00000a2c   0x00000a2c   0x00000044   Code   RO           26    i.sendchar          retarget.o
+    0x00000a70   0x00000a70   0x00000008   Code   RO          328    i.task1             main.o
+    0x00000a78   0x00000a78   0x00000008   Code   RO          329    i.task2             main.o
+    0x00000a80   0x00000a80   0x00000020   Data   RO          595    Region$$Table       anon$$obj.o
 
 
-    Execution Region ER_RW (Exec base: 0x10000000, Load base: 0x00000a18, Size: 0x0000004c, Max: 0xffffffff, ABSOLUTE)
-
-    Exec Addr    Load Addr    Size         Type   Attr      Idx    E Section Name        Object
-
-    0x10000000   0x00000a18   0x0000000c   Data   RW           27    .data               retarget.o
-    0x1000000c   0x00000a24   0x0000001c   Data   RW           99    .data               rtos.o
-    0x10000028   0x00000a40   0x00000020   Data   RW          223    .data               uart.o
-    0x10000048   0x00000a60   0x00000004   Data   RW          383    .data               system_lpc17xx.o
-
-
-    Execution Region ER_ZI (Exec base: 0x1000004c, Load base: 0x00000a64, Size: 0x00002144, Max: 0xffffffff, ABSOLUTE)
+    Execution Region ER_RW (Exec base: 0x10000000, Load base: 0x00000aa0, Size: 0x0000004c, Max: 0xffffffff, ABSOLUTE)
 
     Exec Addr    Load Addr    Size         Type   Attr      Idx    E Section Name        Object
 
-    0x1000004c        -       0x00000060   Zero   RW           98    .bss                rtos.o
-    0x100000ac        -       0x00000080   Zero   RW          222    .bss                uart.o
-    0x1000012c        -       0x00000060   Zero   RW          473    .bss                c_w.l(libspace.o)
-    0x1000018c   0x00000a64   0x00000004   PAD
-    0x10000190        -       0x00000000   Zero   RW          369    HEAP                startup_lpc17xx.o
-    0x10000190        -       0x00002000   Zero   RW          368    STACK               startup_lpc17xx.o
+    0x10000000   0x00000aa0   0x0000000c   Data   RW           27    .data               retarget.o
+    0x1000000c   0x00000aac   0x0000001c   Data   RW           99    .data               rtos.o
+    0x10000028   0x00000ac8   0x00000020   Data   RW          223    .data               uart.o
+    0x10000048   0x00000ae8   0x00000004   Data   RW          383    .data               system_lpc17xx.o
+
+
+    Execution Region ER_ZI (Exec base: 0x1000004c, Load base: 0x00000aec, Size: 0x0000215c, Max: 0xffffffff, ABSOLUTE)
+
+    Exec Addr    Load Addr    Size         Type   Attr      Idx    E Section Name        Object
+
+    0x1000004c        -       0x00000078   Zero   RW           98    .bss                rtos.o
+    0x100000c4        -       0x00000080   Zero   RW          222    .bss                uart.o
+    0x10000144        -       0x00000060   Zero   RW          473    .bss                c_w.l(libspace.o)
+    0x100001a4   0x00000aec   0x00000004   PAD
+    0x100001a8        -       0x00000000   Zero   RW          369    HEAP                startup_lpc17xx.o
+    0x100001a8        -       0x00002000   Zero   RW          368    STACK               startup_lpc17xx.o
 
 
 ==============================================================================
@@ -719,18 +726,18 @@ Image component sizes
 
       Code (inc. data)   RO Data    RW Data    ZI Data      Debug   Object Name
 
-         0          0          0          0          0       4556   context.o
-        92         26          0          0          0       1571   main.o
+        20          0          0          0          0       4872   context.o
+        76         26          0          0          0       1171   main.o
         94          4          0         12          0       3499   retarget.o
-       506         82          0         28         96      51280   rtos.o
+       636         90          0         28        120      51608   rtos.o
         64         26        204          0       8192        944   startup_lpc17xx.o
        320         18          0          4          0        751   system_lpc17xx.o
        616         86          0         32        128      48771   uart.o
 
     ----------------------------------------------------------------------
-      1700        242        236         76       8416     111372   Object Totals
+      1832        250        236         76       8440     111616   Object Totals
          0          0         32          0          0          0   (incl. Generated)
-         8          0          0          0          0          0   (incl. Padding)
+         6          0          0          0          0          0   (incl. Padding)
 
     ----------------------------------------------------------------------
 
@@ -761,8 +768,8 @@ Image component sizes
         74          0          0          0          0         80   sys_stackheap_outer.o
 
     ----------------------------------------------------------------------
-       648         26          0          0        100        940   Library Totals
-         4          0          0          0          4          0   (incl. Padding)
+       652         26          0          0        100        940   Library Totals
+         8          0          0          0          4          0   (incl. Padding)
 
     ----------------------------------------------------------------------
 
@@ -771,7 +778,7 @@ Image component sizes
        644         26          0          0         96        940   c_w.l
 
     ----------------------------------------------------------------------
-       648         26          0          0        100        940   Library Totals
+       652         26          0          0        100        940   Library Totals
 
     ----------------------------------------------------------------------
 
@@ -780,15 +787,15 @@ Image component sizes
 
       Code (inc. data)   RO Data    RW Data    ZI Data      Debug   
 
-      2348        268        236         76       8516     111060   Grand Totals
-      2348        268        236         76       8516     111060   ELF Image Totals
-      2348        268        236         76          0          0   ROM Totals
+      2484        276        236         76       8540     111200   Grand Totals
+      2484        276        236         76       8540     111200   ELF Image Totals
+      2484        276        236         76          0          0   ROM Totals
 
 ==============================================================================
 
-    Total RO  Size (Code + RO Data)                 2584 (   2.52kB)
-    Total RW  Size (RW Data + ZI Data)              8592 (   8.39kB)
-    Total ROM Size (Code + RO Data + RW Data)       2660 (   2.60kB)
+    Total RO  Size (Code + RO Data)                 2720 (   2.66kB)
+    Total RW  Size (RW Data + ZI Data)              8616 (   8.41kB)
+    Total ROM Size (Code + RO Data + RW Data)       2796 (   2.73kB)
 
 ==============================================================================
 

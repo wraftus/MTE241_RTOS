@@ -43,20 +43,21 @@ void SysTick_Handler(void) {
 }
 
 void PendSV_Handler(void){
-//	//Preform context switch if we are ready to switch tasks
-//	//software store context of current running task
-//	storeContext();
-//	
-//	//queue the current running task, pop next task
-//	//TODO change state of running task to ready
-//	addToReadyList(runningTCB);
-//	runningTCB = readyListHead;
-//	readyListHead = readyListHead->next;
-//	runningTCB->next = NULL;
+	//Preform context switch if we are ready to switch tasks
+	//software store context of current running task
+	storeContext();
+	runningTCB->stackPointer = __get_PSP();
+	
+	//queue the current running task, pop next task
+	//TODO change state of running task to ready
+	addToReadyList(runningTCB);
+	runningTCB = readyListHead;
+	readyListHead = readyListHead->next;
+	runningTCB->next = NULL;
 
-//	//software restore context of next task
-//	__set_PSP(runningTCB->stackPointer);
-//	restoreContext(runningTCB->stackPointer);
+	//software restore context of next task
+	__set_PSP(runningTCB->stackPointer);
+	restoreContext(runningTCB->stackPointer);
 
 }
 
@@ -64,7 +65,7 @@ void rtosInit(void){
 	for(uint8_t i = 0; i < MAX_NUM_TASKS; i++){
 		//initialize each TCB with their stack number and base stack adress
 		TCBList[i].stackNum = i;
-		TCBList[i].stackPointer = *((uint32_t *)SCB->VTOR) - MAIN_TASK_SIZE - TASK_STACK_SIZE * (MAX_NUM_TASKS - 1 - i);
+		TCBList[i].stackPointer = TCBList[i].baseOfStack = *((uint32_t *)SCB->VTOR) - MAIN_TASK_SIZE - TASK_STACK_SIZE * (MAX_NUM_TASKS - 1 - i);
 		TCBList[i].next = NULL;
 		TCBList[i].state = SUSPENDED;
 	}
@@ -74,6 +75,9 @@ void rtosInit(void){
 	numTasks = 1;
 	memcpy((void *)(TCBList[MAIN_TASK_ID].stackPointer - TASK_STACK_SIZE), (void *)((*((uint32_t *)SCB->VTOR)) - TASK_STACK_SIZE), TASK_STACK_SIZE);
 
+	//change main stack pointer to be inside init
+	TCBList[MAIN_TASK_ID].stackPointer = TCBList[MAIN_TASK_ID].baseOfStack - ((*((uint32_t *)SCB->VTOR)) - __get_MSP());
+	
 	//set MSP to start of Main stack
 	__set_MSP(*((uint32_t*)SCB->VTOR));
 	//set SPSEL bit (bit 1) in control register

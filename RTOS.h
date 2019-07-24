@@ -18,6 +18,7 @@ typedef enum {RUNNING, READY, WAITING, SUSPENDED} taskState_t;
 typedef struct TCB_t TCB_t;
 struct TCB_t{
 	uint8_t stackNum;
+	uint32_t baseOfStack;
 	uint32_t stackPointer;
 	taskState_t state;
 	TCB_t *next;
