@@ -16,6 +16,7 @@ uint32_t nextTimeSlice;
 TCB_t TCBList[MAX_NUM_TASKS];
 TCB_t *runningTCB;
 TCB_t *readyListHead;
+TCB_t *waitListHead;
 
 void addToList(TCB_t *toAdd, TCB_t **listHead){
 	if(*listHead == NULL){
@@ -30,21 +31,36 @@ void addToList(TCB_t *toAdd, TCB_t **listHead){
 	}
 }
 
-void removeFromList(TCB_t *toRemove, TCB_t **listHead){
-	//TODO maybe make this boolean incase it's not in the list?
-	TCB_t *temp = *listHead;
-	while(temp != NULL && temp->next != toRemove){
-		temp = temp->next;
-	}
-	if(temp == NULL){
-		//could not find toRemove
-		return;
-	}
-	//TODO could break if toRemove is NULL (not sure why this would be the case tho...)
-	temp->next = temp->next->next;
-}
-
 void SysTick_Handler(void) {
+	//check if any waiting tasks are done
+	TCB_t *prev = NULL;
+	TCB_t *cur = waitListHead;
+	while(cur != NULL){
+		cur->waitTicks--;
+		if(cur->waitTicks == 0){
+			//task is done waiting!
+			cur->state = READY;
+			addToList(cur, &readyListHead);
+			//remove task
+			if(prev == NULL){
+				//first task is done
+				waitListHead = cur->next;
+				cur->next = NULL;
+				cur = waitListHead;
+			}
+			else{
+				prev->next = cur->next;
+				cur->next = NULL;
+				cur = prev->next;
+			}
+		}
+		else{
+			prev = cur;
+			cur = cur->next;
+		}
+	}
+
+	//check for timeslices
     rtosTickCounter++;
     if(rtosTickCounter - nextTimeSlice >= TIME_SLICE_TICKS || runningTCB->state == WAITING){
     	//we are ready to move to the next task
@@ -87,6 +103,7 @@ void rtosInit(void){
 		TCBList[i].stackPointer = TCBList[i].baseOfStack = *((uint32_t *)SCB->VTOR) - MAIN_TASK_SIZE - TASK_STACK_SIZE * (MAX_NUM_TASKS - 1 - i);
 		TCBList[i].next = NULL;
 		TCBList[i].state = SUSPENDED;
+		TCBList[i].waitTicks = 0;
 	}
 
 	//copy over main stack to first task's stack
@@ -199,4 +216,12 @@ void releaseMutex(mutex_t *mutex){
 	__disable_irq();
 	*mutex = -1;
 	__enable_irq();
+}
+
+//Maybe make this atomic?
+void rtosWait(uint32_t ticks){
+	runningTCB->waitTicks = ticks;
+	runningTCB->state = WAITING;
+	addToList(runningTCB, &waitListHead);
+	//TODO force context switch
 }
