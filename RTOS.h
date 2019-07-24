@@ -23,7 +23,10 @@ struct TCB_t{
 
 typedef void (*rtosTaskFunc_t)(void *args);
 
-typedef uint8_t semaphore_t;
+typedef struct{
+	uint8_t count;
+	TCB_t *waitListHead;
+} semaphore_t;
 typedef int8_t mutex_t;
 
 void rtosInit(void);

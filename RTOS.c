@@ -16,27 +16,45 @@ TCB_t TCBList[MAX_NUM_TASKS + 1];
 TCB_t *runningTCB;
 TCB_t *readyListHead;
 
-void addToReadyList(TCB_t *tcb){
-	if(readyListHead == NULL){
-		readyListHead = tcb;
+void addToList(TCB_t *toAdd, TCB_t **listHead){
+	if(*listHead == NULL){
+		*listHead = toAdd;
 	}
 	else{
-		TCB_t *readyTCB = readyListHead;
-		while(readyTCB->next != NULL){
-			readyTCB = readyTCB->next;
+		TCB_t *temp = *listHead;
+		while(temp->next != NULL){
+			temp = temp->next;
 		}
-		readyTCB->next = tcb;
+		temp->next = toAdd;
 	}
+}
+
+void removeFromList(TCB_t *toRemove, TCB_t **listHead){
+	//TODO maybe make this boolean incase it's not in the list?
+	TCB_t *temp = *listHead;
+	while(temp != NULL && temp->next != toRemove){
+		temp = temp->next;
+	}
+	if(temp == NULL){
+		//could not find toRemove
+		return;
+	}
+	//TODO could break if toRemove is NULL (not sure why this would be the case tho...)
+	temp->next = temp->next->next;
 }
 
 void SysTick_Handler(void) {
     rtosTickCounter++;
-    if(rtosTickCounter - nextTimeSlice >= TIME_SLICE_TICKS){
+    if(rtosTickCounter - nextTimeSlice >= TIME_SLICE_TICKS || runningTCB->state == WAITING){
     	//we are ready to move to the next task
+    	if(runningTCB->state == WAITING){
+    		rtosTickCounter = nextTimeSlice;
+    	}
     	nextTimeSlice += TIME_SLICE_TICKS;
+		//TODO unsure what to do if all tasks are waiting
     	if(readyListHead != NULL){
     		//notify PendSV_Handler we are ready to switch
-				SCB->ICSR |= SCB_ICSR_PENDSVSET_Msk;
+			SCB->ICSR |= SCB_ICSR_PENDSVSET_Msk;
     	}
     }
 }
@@ -48,7 +66,9 @@ void PendSV_Handler(void){
 
 	//queue the current running task, pop next task
 	//TODO change state of running task to ready
-	addToReadyList(runningTCB);
+	if(runningTCB0->state != WAITING){
+		addToList(runningTCB, readyListHead);
+	}
 	runningTCB = readyListHead;
 	readyListHead = readyListHead->next;
 	runningTCB->next = NULL;
@@ -116,29 +136,38 @@ void rtosThreadNew(rtosTaskFunc_t func, void *arg){
 
 	//set current task to ready and put it in the list
 	newTCB->state = READY;
-	addToReadyList(newTCB);
+	addToList(newTCB, readyListHead);
 
 	//bump up num tasks
 	numTasks++;
 }
 
 void semaphorInit(semaphore_t *sem, uint8_t count){
-	*sem = val;
+	sem->count = count;
+	sem->waitListHead = NULL;
 }
 
 void waitOnSemaphor(semaphore_t *sem){
 	__disable_irq();
-	while(*sem <= 0){
-		__enable_irq();
-		__disable_irq();
+	if(sem->count == 0){
+		//semaphore is closed, wait until it is signalled
+		addToList(runningTCB, sem->waitListHead);
+		runningTCB->state = WAITING;
 	}
-	(*sem)++;
+	else{
+		sem->count--;
+	}
 	__enable_irq();
 }
 
 void signalSemaphor(semaphore_t *sem){
 	__disable_irq();
-	(*sem)++;
+	sem->count++;
+	if(sem->waitListHead != NULL){
+		addToList(sem->waitListHead, readyListHead);
+		sem->waitListHead->state = READY;
+		sem->waitListHead = sem->waitListHead->next;
+	}
 	__enable_irq();
 }
 
