@@ -40,7 +40,7 @@ void SysTick_Handler(void) {
 		if(cur->waitTicks == 0){
 			//task is done waiting!
 			cur->state = READY;
-			addToList(cur->state, readyListHead);
+			addToList(cur, &readyListHead);
 			//remove task
 			if(prev == NULL){
 				//first task is done
@@ -222,6 +222,6 @@ void releaseMutex(mutex_t *mutex){
 void rtosWait(uint32_t ticks){
 	runningTCB->waitTicks = ticks;
 	runningTCB->state = WAITING;
-	addToList(runningTCB, waitListHead);
+	addToList(runningTCB, &waitListHead);
 	//TODO force context switch
 }
