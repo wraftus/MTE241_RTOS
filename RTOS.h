@@ -2,7 +2,7 @@
 #define MAIN_TASK_ID 0
 
 #define TASK_STACK_SIZE 1024
-#define MAIN_TASK_SIZE 2048 
+#define MAIN_TASK_SIZE 2048
 
 //Position of RO (task paramater) in context "array"
 #define R0_OFFSET 8
@@ -17,7 +17,7 @@ typedef enum {RUNNING, READY, WAITING, SUSPENDED} taskState_t;
 
 typedef struct TCB_t TCB_t;
 struct TCB_t{
-	uint8_t stackNum;
+	uint8_t id;
 	uint32_t baseOfStack;
 	uint32_t stackPointer;
 	taskState_t state;
@@ -26,17 +26,20 @@ struct TCB_t{
 
 typedef void (*rtosTaskFunc_t)(void *args);
 
-typedef uint32_t semaphore_t;
-typedef uint32_t mutex_t;
+typedef struct{
+	uint8_t count;
+	TCB_t *waitListHead;
+} semaphore_t;
+typedef int8_t mutex_t;
 
 void rtosInit(void);
 
 void rtosThreadNew(rtosTaskFunc_t func, void *arg);
 
-void semaphoreInit(semaphore_t *sem, uint32_t val);
+void semaphoreInit(semaphore_t *sem, uint32_t count);
 void waitOnSemaphore(semaphore_t *sem);
 void signalSemaphore(semaphore_t *sem);
 
 void mutextInit(mutex_t *mutex);
-void waitOnMutex(mutex_t *mutex);
-void signalMutex(mutex_t *mutex);
+void aquireMutex(mutex_t *mutex);
+void releaseMutex(mutex_t *mutex);

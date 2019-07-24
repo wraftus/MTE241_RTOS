@@ -17,27 +17,45 @@ TCB_t TCBList[MAX_NUM_TASKS];
 TCB_t *runningTCB;
 TCB_t *readyListHead;
 
-void addToReadyList(TCB_t *tcb){
-	if(readyListHead == NULL){
-		readyListHead = tcb;
+void addToList(TCB_t *toAdd, TCB_t **listHead){
+	if(*listHead == NULL){
+		*listHead = toAdd;
 	}
 	else{
-		TCB_t *readyTCB = readyListHead;
-		while(readyTCB->next != NULL){
-			readyTCB = readyTCB->next;
+		TCB_t *temp = *listHead;
+		while(temp->next != NULL){
+			temp = temp->next;
 		}
-		readyTCB->next = tcb;
+		temp->next = toAdd;
 	}
+}
+
+void removeFromList(TCB_t *toRemove, TCB_t **listHead){
+	//TODO maybe make this boolean incase it's not in the list?
+	TCB_t *temp = *listHead;
+	while(temp != NULL && temp->next != toRemove){
+		temp = temp->next;
+	}
+	if(temp == NULL){
+		//could not find toRemove
+		return;
+	}
+	//TODO could break if toRemove is NULL (not sure why this would be the case tho...)
+	temp->next = temp->next->next;
 }
 
 void SysTick_Handler(void) {
     rtosTickCounter++;
-    if(rtosTickCounter - nextTimeSlice >= TIME_SLICE_TICKS){
+    if(rtosTickCounter - nextTimeSlice >= TIME_SLICE_TICKS || runningTCB->state == WAITING){
     	//we are ready to move to the next task
+    	if(runningTCB->state == WAITING){
+    		rtosTickCounter = nextTimeSlice;
+    	}
     	nextTimeSlice += TIME_SLICE_TICKS;
+		//TODO unsure what to do if all tasks are waiting
     	if(readyListHead != NULL){
     		//notify PendSV_Handler we are ready to switch
-				SCB->ICSR |= SCB_ICSR_PENDSVSET_Msk;
+			SCB->ICSR |= SCB_ICSR_PENDSVSET_Msk;
     	}
     }
 }
@@ -46,10 +64,12 @@ void PendSV_Handler(void){
 	//Preform context switch if we are ready to switch tasks
 	//software store context of current running task
 	runningTCB->stackPointer = storeContext();
-	
+
 	//queue the current running task, pop next task
 	//TODO change state of running task to ready
-	addToReadyList(runningTCB);
+	if(runningTCB->state != WAITING){
+		addToList(runningTCB, &readyListHead);
+	}
 	runningTCB = readyListHead;
 	readyListHead = readyListHead->next;
 	runningTCB->next = NULL;
@@ -63,7 +83,7 @@ void PendSV_Handler(void){
 void rtosInit(void){
 	for(uint8_t i = 0; i < MAX_NUM_TASKS; i++){
 		//initialize each TCB with their stack number and base stack adress
-		TCBList[i].stackNum = i;
+		TCBList[i].id = i;
 		TCBList[i].stackPointer = TCBList[i].baseOfStack = *((uint32_t *)SCB->VTOR) - MAIN_TASK_SIZE - TASK_STACK_SIZE * (MAX_NUM_TASKS - 1 - i);
 		TCBList[i].next = NULL;
 		TCBList[i].state = SUSPENDED;
@@ -76,7 +96,7 @@ void rtosInit(void){
 
 	//change main stack pointer to be inside init
 	TCBList[MAIN_TASK_ID].stackPointer = TCBList[MAIN_TASK_ID].baseOfStack - ((*((uint32_t *)SCB->VTOR)) - __get_MSP());
-	
+
 	//set MSP to start of Main stack
 	__set_MSP(*((uint32_t*)SCB->VTOR));
 	//set SPSEL bit (bit 1) in control register
@@ -122,32 +142,61 @@ void rtosThreadNew(rtosTaskFunc_t func, void *arg){
 
 	//set current task to ready and put it in the list
 	newTCB->state = READY;
-	addToReadyList(newTCB);
+	addToList(newTCB, &readyListHead);
 
 	//bump up num tasks
 	numTasks++;
 }
 
-void semaphorInit(semaphore_t *sem, uint32_t val){
-
+void semaphorInit(semaphore_t *sem, uint8_t count){
+	sem->count = count;
+	sem->waitListHead = NULL;
 }
 
 void waitOnSemaphor(semaphore_t *sem){
-
+	__disable_irq();
+	if(sem->count == 0){
+		//semaphore is closed, wait until it is signalled
+		addToList(runningTCB, &(sem->waitListHead));
+		runningTCB->state = WAITING;
+	}
+	else{
+		sem->count--;
+	}
+	__enable_irq();
 }
 
 void signalSemaphor(semaphore_t *sem){
-
+	__disable_irq();
+	sem->count++;
+	if(sem->waitListHead != NULL){
+		addToList(sem->waitListHead, &readyListHead);
+		sem->waitListHead->state = READY;
+		sem->waitListHead = sem->waitListHead->next;
+	}
+	__enable_irq();
 }
 
 void mutextInit(mutex_t *mutex){
-
+	*mutex = -1;
 }
 
-void waitOnMutex(mutex_t *mutex){
-
+void aquireMutex(mutex_t *mutex){
+	__disable_irq();
+	while(*mutex != -1){
+		__enable_irq();
+		__disable_irq();
+	}
+	*mutex = runningTCB->id;
+	__enable_irq();
 }
 
-void signalMutex(mutex_t *mutex){
-
+void releaseMutex(mutex_t *mutex){
+	if(*mutex != runningTCB->id){
+		//cannot release a mutex you do not own
+		return;
+	}
+	__disable_irq();
+	*mutex = -1;
+	__enable_irq();
 }
