@@ -2,6 +2,7 @@
 #define MAIN_TASK_ID 0
 
 #define TASK_STACK_SIZE 1024
+#define MAIN_TASK_SIZE 2048 
 
 //Position of RO (task paramater) in context "array"
 #define R0_OFFSET 8
@@ -10,6 +11,7 @@
 //Position of PSR (Process Status Register) in context "array"
 #define PSR_OFFSET 15
 #define PSR_DEFAULT 0x01000000
+
 
 typedef enum {RUNNING, READY, WAITING, SUSPENDED} taskState_t;
 

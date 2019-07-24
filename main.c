@@ -19,9 +19,11 @@ void task2(void *args){
 }
 
 int main(void){
+	uint32_t counter = 255;
+	counter-=1;
+	uint32_t *counter_addr = &counter; 
 	rtosInit();
-	uint32_t counter = 0;
-	
+
 	printf("0: Main Task!\n");
 	
 	rtosThreadNew(task1, NULL);
