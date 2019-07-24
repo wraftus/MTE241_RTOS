@@ -17,45 +17,27 @@ TCB_t TCBList[MAX_NUM_TASKS];
 TCB_t *runningTCB;
 TCB_t *readyListHead;
 
-void addToList(TCB_t *toAdd, TCB_t **listHead){
-	if(*listHead == NULL){
-		*listHead = toAdd;
+void addToReadyList(TCB_t *tcb){
+	if(readyListHead == NULL){
+		readyListHead = tcb;
 	}
 	else{
-		TCB_t *temp = *listHead;
-		while(temp->next != NULL){
-			temp = temp->next;
+		TCB_t *readyTCB = readyListHead;
+		while(readyTCB->next != NULL){
+			readyTCB = readyTCB->next;
 		}
-		temp->next = toAdd;
+		readyTCB->next = tcb;
 	}
-}
-
-void removeFromList(TCB_t *toRemove, TCB_t **listHead){
-	//TODO maybe make this boolean incase it's not in the list?
-	TCB_t *temp = *listHead;
-	while(temp != NULL && temp->next != toRemove){
-		temp = temp->next;
-	}
-	if(temp == NULL){
-		//could not find toRemove
-		return;
-	}
-	//TODO could break if toRemove is NULL (not sure why this would be the case tho...)
-	temp->next = temp->next->next;
 }
 
 void SysTick_Handler(void) {
     rtosTickCounter++;
-    if(rtosTickCounter - nextTimeSlice >= TIME_SLICE_TICKS || runningTCB->state == WAITING){
+    if(rtosTickCounter - nextTimeSlice >= TIME_SLICE_TICKS){
     	//we are ready to move to the next task
-    	if(runningTCB->state == WAITING){
-    		rtosTickCounter = nextTimeSlice;
-    	}
     	nextTimeSlice += TIME_SLICE_TICKS;
-		//TODO unsure what to do if all tasks are waiting
     	if(readyListHead != NULL){
     		//notify PendSV_Handler we are ready to switch
-			SCB->ICSR |= SCB_ICSR_PENDSVSET_Msk;
+				SCB->ICSR |= SCB_ICSR_PENDSVSET_Msk;
     	}
     }
 }
@@ -70,6 +52,7 @@ void PendSV_Handler(void){
 		addToList(runningTCB, &readyListHead);
 		runningTCB->state = READY;
 	}
+
 	runningTCB = readyListHead;
 	readyListHead = readyListHead->next;
 	runningTCB->next = NULL;
@@ -83,7 +66,7 @@ void PendSV_Handler(void){
 void rtosInit(void){
 	for(uint8_t i = 0; i < MAX_NUM_TASKS; i++){
 		//initialize each TCB with their stack number and base stack adress
-		TCBList[i].id = i;
+		TCBList[i].stackNum = i;
 		TCBList[i].stackPointer = TCBList[i].baseOfStack = *((uint32_t *)SCB->VTOR) - MAIN_TASK_SIZE - TASK_STACK_SIZE * (MAX_NUM_TASKS - 1 - i);
 		TCBList[i].next = NULL;
 		TCBList[i].state = SUSPENDED;
@@ -142,15 +125,14 @@ void rtosThreadNew(rtosTaskFunc_t func, void *arg){
 
 	//set current task to ready and put it in the list
 	newTCB->state = READY;
-	addToList(newTCB, &readyListHead);
+  addToList(newTCB, &readyListHead);
 
 	//bump up num tasks
 	numTasks++;
 }
 
-void semaphorInit(semaphore_t *sem, uint8_t count){
-	sem->count = count;
-	sem->waitListHead = NULL;
+void semaphorInit(semaphore_t *sem, uint32_t val){
+
 }
 
 void waitOnSemaphor(semaphore_t *sem){
@@ -178,17 +160,10 @@ void signalSemaphor(semaphore_t *sem){
 }
 
 void mutextInit(mutex_t *mutex){
-	*mutex = -1;
+
 }
 
-void aquireMutex(mutex_t *mutex){
-	__disable_irq();
-	while(*mutex != -1){
-		__enable_irq();
-		__disable_irq();
-	}
-	*mutex = runningTCB->id;
-	__enable_irq();
+void waitOnMutex(mutex_t *mutex){
 
 }
 
