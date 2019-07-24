@@ -20,6 +20,7 @@ struct TCB_t{
 	uint8_t id;
 	uint32_t baseOfStack;
 	uint32_t stackPointer;
+	uint32_t waitTicks;
 	taskState_t state;
 	TCB_t *next;
 };
@@ -43,3 +44,5 @@ void signalSemaphore(semaphore_t *sem);
 void mutextInit(mutex_t *mutex);
 void aquireMutex(mutex_t *mutex);
 void releaseMutex(mutex_t *mutex);
+
+void rtosWait(uint32_t ticks);
