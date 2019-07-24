@@ -18,6 +18,16 @@ TCB_t *runningTCB;
 TCB_t *readyListHead;
 TCB_t *waitListHead;
 
+// This should only be called atomically
+void forceContextSwitch(){
+	rtosTickCounter = nextTimeSlice;
+	nextTimeSlice += TIME_SLICE_TICKS;
+	if(readyListHead != NULL){
+			//notify PendSV_Handler we are ready to switch
+		SCB->ICSR |= SCB_ICSR_PENDSVSET_Msk;
+	}
+}
+
 void addToList(TCB_t *toAdd, TCB_t **listHead){
 	if(*listHead == NULL){
 		*listHead = toAdd;
@@ -61,19 +71,15 @@ void SysTick_Handler(void) {
 	}
 
 	//check for timeslices
-    rtosTickCounter++;
-    if(rtosTickCounter - nextTimeSlice >= TIME_SLICE_TICKS || runningTCB->state == WAITING){
-    	//we are ready to move to the next task
-    	if(runningTCB->state == WAITING){
-    		rtosTickCounter = nextTimeSlice;
-    	}
-    	nextTimeSlice += TIME_SLICE_TICKS;
+	rtosTickCounter++;
+	if(rtosTickCounter - nextTimeSlice >= TIME_SLICE_TICKS){
+		//we are ready to move to the next task
 		//TODO unsure what to do if all tasks are waiting
-    	if(readyListHead != NULL){
-    		//notify PendSV_Handler we are ready to switch
-			SCB->ICSR |= SCB_ICSR_PENDSVSET_Msk;
-    	}
-    }
+		if(readyListHead != NULL){
+			//notify PendSV_Handler we are ready to switch
+		SCB->ICSR |= SCB_ICSR_PENDSVSET_Msk;
+		}
+	}
 }
 
 void PendSV_Handler(void){
@@ -218,10 +224,11 @@ void releaseMutex(mutex_t *mutex){
 	__enable_irq();
 }
 
-//Maybe make this atomic?
 void rtosWait(uint32_t ticks){
+	__disable_irq();
 	runningTCB->waitTicks = ticks;
 	runningTCB->state = WAITING;
 	addToList(runningTCB, &waitListHead);
-	//TODO force context switch
+	forceContextSwitch();
+	__enable_irq();
 }
