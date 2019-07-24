@@ -45,8 +45,7 @@ void SysTick_Handler(void) {
 void PendSV_Handler(void){
 	//Preform context switch if we are ready to switch tasks
 	//software store context of current running task
-	storeContext();
-	runningTCB->stackPointer = __get_PSP();
+	runningTCB->stackPointer = storeContext();
 	
 	//queue the current running task, pop next task
 	//TODO change state of running task to ready
