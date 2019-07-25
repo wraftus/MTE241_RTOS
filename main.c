@@ -21,6 +21,8 @@ typedef struct {
 } barrier_t;
 barrier_t barrier;
 
+semaphore_t sneakySem;
+
 // non reusable barrier
 void syncOnBarrier(barrier_t *barrier) {
 	rtosEnterFunction();
@@ -97,9 +99,13 @@ void printTask(void *args) {
 
   sprintf(taskName, "printTask for %s", name);
 
-  // tell GLCD we are ready
-  rtosWaitOnSemaphore(&draw_sem);
+	//we are ready to draw
+	rtosWaitOnSemaphore(&draw_sem);
   rtosSignalSemaphore(&draw_sem);
+	//marinate
+	rtosWait(1000);
+
+  // tell GLCD we are ready
   rtosAcquireMutex(&draw_mutex);
   rtosEnterCriticalSection();
   GLCD_DisplayString(2 + readyOrder++, 0, 1, taskName);
@@ -113,8 +119,8 @@ void printTask(void *args) {
     rtosAcquireMutex(&print_mutex);
     // print out the message
     printf("Hi! My name is %s, and I currently have the mutex.\n", name);
-    // wait for 0.5s
-    rtosWait(500);
+    // wait for 1s
+    rtosWait(1000);
     rtosReleaseMutex(&print_mutex);
 		rtosReleaseMutex(&print_mutex);
   }
@@ -137,7 +143,7 @@ void lazyGLCDTask(void *args) {
   rtosReleaseMutex(&draw_mutex);
 
   // marinate
-  rtosWait(1500);
+  rtosWait(2000);
 
   // tell GLCD we are ready
   rtosAcquireMutex(&draw_mutex);
@@ -148,7 +154,24 @@ void lazyGLCDTask(void *args) {
 
   // wait until all other tasks are ready to go
   syncOnBarrier(&barrier);
-  while(1){
+	
+	//say every thing is done
+	unsigned char doneMessage[] = "All Synced :)";
+	
+	rtosAcquireMutex(&draw_mutex);
+  rtosEnterCriticalSection();
+  GLCD_DisplayString(7, 0, 1, doneMessage);
+  rtosExitCriticalSection();
+  rtosReleaseMutex(&draw_mutex);
+  while(1);
+}
+
+void sneakyTask(void *args){
+	rtosAcquireMutex(&draw_mutex);
+	rtosSignalSemaphore(&sneakySem);
+	rtosWait(5000);
+	rtosReleaseMutex(&draw_mutex);
+	while(1){
 	}
 }
 
@@ -156,6 +179,8 @@ int main(void) {
   rtosInit();
   printf("Main Task!\n");
 
+	//initialize sneaky sem to 0
+	rtosSemaphoreInit(&sneakySem, 0);
   // intialize printing mutex
   rtosMutexInit(&print_mutex);
   // initialize draw mutex and readyOrder
@@ -169,6 +194,11 @@ int main(void) {
   barrier.count = 0;
   barrier.n = 4;
 
+	//start sneaky task
+	rtosThreadNew(sneakyTask, NULL, LOWEST_PRIORITY);
+	
+	//wait on sneaky semaphore before starting remaining tasks
+	rtosWaitOnSemaphore(&sneakySem);
   // start timer task
   rtosThreadNew(ledTimerTask, NULL, DEFAULT_PRIORITY);
 

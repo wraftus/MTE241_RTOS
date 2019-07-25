@@ -59,7 +59,7 @@ void addToList(TCB_t *toAdd, tcbQueue_t *queue) {
     queue[toAdd->taskPriority].tail->next = toAdd;
     queue[toAdd->taskPriority].tail = toAdd;
   }
-  toAdd->&queue;
+  toAdd->currentQueue = queue;
 }
 
 void SysTick_Handler(void) {
@@ -312,18 +312,18 @@ void rtosAcquireMutex(mutex_t *mutex) {
     mutex->owner = runningTCB->id;
   } else { // mutex already owned
 
-    if (TCBList[mutex->owner].taskPriority < runningTCB->taskPriority){
+    if (TCBList[mutex->owner].taskPriority > runningTCB->taskPriority){
       //elevate mutex owner priority to level of running TCB
-      mutex->storedPriority = runningTCB -> TCBList[mutex->owner].taskPriority;
+      mutex->storedPriority = TCBList[mutex->owner].taskPriority;
       TCBList[mutex->owner].taskPriority = runningTCB->taskPriority;
 
-      tcbQueue_t *queue = TCBList[mutex->owner]->currentQueue;
-      taskPriority_t priority = TCBList[mutex->owner].taskPriority;
+      tcbQueue_t *queue = TCBList[mutex->owner].currentQueue;
+      taskPriority_t priority = mutex->storedPriority;
 
-      TCB_t *TCB_ptr = queue[priority]->head;
+      TCB_t *TCB_ptr = queue[priority].head;
       TCB_t *TCB_prev_ptr = NULL;
       //find task in queue
-      while (TCB_ptr->id != TCBList[mutex->owner].id){
+      while (TCB_ptr->id != mutex->owner){
           TCB_prev_ptr = TCB_ptr;
           TCB_ptr = TCB_ptr->next;
       }
@@ -346,7 +346,7 @@ void rtosAcquireMutex(mutex_t *mutex) {
         TCB_ptr = TCB_prev_ptr->next;
       }
       //insert elevated mutex owner task back into same queue,but with elevated priority
-      addToList(TCBList[mutex->owner], queue);
+      addToList(&(TCBList[mutex->owner]), queue);
     }
 
     runningTCB->state = WAITING;
@@ -371,38 +371,7 @@ void rtosReleaseMutex(mutex_t *mutex) {
     TCBList[mutex->owner].taskPriority = mutex->storedPriority;
     //reset stored priority
     mutex->storedPriority = NO_PRIORITY;
-
-    tcbQueue_t *queue = TCBList[mutex->owner]->currentQueue;
-    taskPriority_t priority = TCBList[mutex->owner].taskPriority;
-
-    TCB_t *TCB_ptr = queue[priority]->head;
-    TCB_t *TCB_prev_ptr = NULL;
-    //find task in queue
-    while (TCB_ptr->id != TCBList[mutex->owner].id){
-      TCB_prev_ptr = TCB_ptr;
-      TCB_ptr = TCB_ptr->next;
-    }
-    //remove task from queue
-    if (TCB_ptr == queue[priority].head) { // if task is the head
-      if (TCB_ptr->next == NULL) {         // if its the only task in the queue
-        queue[priority].tail = NULL;
-      }
-      queue[priority].head = TCB_ptr->next;
-      TCB_ptr->next = NULL;
-      TCB_ptr = queue[priority].head;
-    } else if (TCB_ptr == queue[priority].tail) { // if task is that tail
-      TCB_prev_ptr->next = NULL;
-      queue[priority].tail = TCB_prev_ptr;
-      TCB_ptr->next = NULL;
-      TCB_ptr = NULL;
-    } else { // neither head or tail
-      TCB_prev_ptr->next = TCB_ptr->next;
-      TCB_ptr->next = NULL;
-      TCB_ptr = TCB_prev_ptr->next;
-    }
-
-    //insert original mutex owner task back into same queue,but with original priority
-    addToList(TCBList[mutex->owner], queue);
+		
   }
 
   for (taskPriority_t priority = HIGHEST_PRIORITY; priority < NUM_PRIORITIES; priority++) {
