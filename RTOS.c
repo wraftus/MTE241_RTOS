@@ -205,11 +205,14 @@ void signalSemaphor(semaphore_t *sem){
 }
 
 void mutextInit(mutex_t *mutex){
+	rtosEnterFunction();
 	mutex->owner = -1;
 	mutex->waitListHead = NULL;
+	rtosExitFunction();
 }
 
 void aquireMutex(mutex_t *mutex){
+	rtosEnterFunction();
 	__disable_irq();
 	if(mutex->owner == -1){
 		//mutex is not yet owned
@@ -221,9 +224,11 @@ void aquireMutex(mutex_t *mutex){
 		forceContextSwitch();
 	}
 	__enable_irq();
+	rtosExitFunction();
 }
 
 void releaseMutex(mutex_t *mutex){
+	rtosEnterFunction();
 	__disable_irq();
 	if(mutex->owner != runningTCB->id){
 		//cannot release a mutex you do not own
@@ -241,6 +246,7 @@ void releaseMutex(mutex_t *mutex){
 		mutex->waitListHead = temp;
 	}
 	__enable_irq();
+	rtosExitFunction();
 }
 
 void rtosWait(uint32_t ticks){
