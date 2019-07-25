@@ -104,7 +104,7 @@ void PendSV_Handler(void){
 
 void rtosInit(void){
 	for(uint8_t i = 0; i < MAX_NUM_TASKS; i++){
-		//initialize each TCB with their stack number and base stack adress
+		//initialize each TCB with their stack number and base stack address
 		TCBList[i].id = i;
 		TCBList[i].stackPointer = TCBList[i].baseOfStack = *((uint32_t *)SCB->VTOR) - MAIN_TASK_SIZE - TASK_STACK_SIZE * (MAX_NUM_TASKS - 1 - i);
 		TCBList[i].next = NULL;
@@ -138,7 +138,7 @@ void rtosInit(void){
 	rtosTickCounter = 0;
 	nextTimeSlice = TIME_SLICE_TICKS;
 
-	//Set systick interupt to fire at the time slice frequency
+	//Set systick interrupt to fire at the time slice frequency
 	SysTick_Config(SystemCoreClock/RTOS_TICK_FREQ);
 }
 
@@ -158,7 +158,7 @@ void rtosThreadNew(rtosTaskFunc_t func, void *arg){
 
 	//set P0 for this task's to arg
 	*((uint32_t *)newTCB->stackPointer + R0_OFFSET) = (uint32_t)arg;
-	//set PC to adress of the taks's function
+	//set PC to address of the tasks's function
 	*((uint32_t *)newTCB->stackPointer + PC_OFFSET) = (uint32_t)func;
 	//set PSR to default value (0x01000000)
 	*((uint32_t *)newTCB->stackPointer + PSR_OFFSET) = PSR_DEFAULT;
@@ -171,12 +171,12 @@ void rtosThreadNew(rtosTaskFunc_t func, void *arg){
 	numTasks++;
 }
 
-void semaphorInit(semaphore_t *sem, uint8_t count){
+void semaphoreInit(semaphore_t *sem, uint8_t count){
 	sem->count = count;
 	sem->waitListHead = NULL;
 }
 
-void waitOnSemaphor(semaphore_t *sem){
+void waitOnSemaphore(semaphore_t *sem){
 	__disable_irq();
 	if(sem->count > 0){
 		//semaphore is open
@@ -191,7 +191,7 @@ void waitOnSemaphor(semaphore_t *sem){
 	__enable_irq();
 }
 
-void signalSemaphor(semaphore_t *sem){
+void signalSemaphore(semaphore_t *sem){
 	__disable_irq();
 	sem->count++;
 	if(sem->waitListHead != NULL){
@@ -204,12 +204,12 @@ void signalSemaphor(semaphore_t *sem){
 	__enable_irq();
 }
 
-void mutextInit(mutex_t *mutex){
+void mutexInit(mutex_t *mutex){
 	mutex->owner = -1;
 	mutex->waitListHead = NULL;
 }
 
-void aquireMutex(mutex_t *mutex){
+void acquireMutex(mutex_t *mutex){
 	__disable_irq();
 	if(mutex->owner == -1){
 		//mutex is not yet owned

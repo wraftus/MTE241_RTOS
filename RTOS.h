@@ -4,7 +4,7 @@
 #define TASK_STACK_SIZE 1024
 #define MAIN_TASK_SIZE 2048
 
-//Position of RO (task paramater) in context "array"
+//Position of RO (task parameter) in context "array"
 #define R0_OFFSET 8
 //Position of PC (Program Counter) in context "array"
 #define PC_OFFSET 14
@@ -44,8 +44,8 @@ void semaphoreInit(semaphore_t *sem, uint32_t count);
 void waitOnSemaphore(semaphore_t *sem);
 void signalSemaphore(semaphore_t *sem);
 
-void mutextInit(mutex_t *mutex);
-void aquireMutex(mutex_t *mutex);
+void mutexInit(mutex_t *mutex);
+void acquireMutex(mutex_t *mutex);
 void releaseMutex(mutex_t *mutex);
 
 void rtosWait(uint32_t ticks);
