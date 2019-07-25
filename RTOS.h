@@ -1,11 +1,17 @@
 #ifndef __RTOS_H
 #define __RTOS_H
 
-typedef enum { HIGHEST_PRIORITY = 0, DEFAULT_PRIORITY = 3, LOWEST_PRIORITY = 6, NO_PRIORITY, NUM_PRIORITIES = NO_PRIORITY } taskPriority_t;
+typedef enum {
+  HIGHEST_PRIORITY = 0,
+  DEFAULT_PRIORITY = 3,
+  LOWEST_PRIORITY = 6,
+  NO_PRIORITY,
+  NUM_PRIORITIES = NO_PRIORITY
+} taskPriority_t;
 
 typedef enum { RUNNING, READY, WAITING, SUSPENDED } taskState_t;
 
-typedef enum {RTOS_OK, RTOS_NOT_INIT, RTOS_MAX_TASKS, RTOS_MUTEX_NOT_OWNED} rtosStatus_t;
+typedef enum { RTOS_OK, RTOS_NOT_INIT, RTOS_MAX_TASKS, RTOS_MUTEX_NOT_OWNED } rtosStatus_t;
 
 typedef struct TCB TCB_t;
 typedef struct tcbQueue tcbQueue_t;
@@ -25,7 +31,6 @@ struct TCB {
   tcbQueue_t *currentQueue;
   TCB_t *next;
 };
-
 
 typedef void (*rtosTaskFunc_t)(void *args);
 
