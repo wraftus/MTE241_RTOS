@@ -1,5 +1,6 @@
+#pragma once
 
-
+#include <LPC17xx.h> //todo remove
 typedef enum {HIGHEST_PRIORITY = 0, DEFAULT_PRIORITY = 3 , LOWEST_PRIORITY = 6, NUM_PRIORITIES} taskPriority_t;
 
 typedef enum {RUNNING, READY, WAITING, SUSPENDED} taskState_t;
@@ -35,7 +36,7 @@ void rtosInit(void);
 
 void rtosThreadNew(rtosTaskFunc_t func, void *arg, taskPriority_t taskPriority);
 
-void semaphoreInit(semaphore_t *sem, uint32_t count);
+void semaphoreInit(semaphore_t *sem, uint8_t count);
 void waitOnSemaphore(semaphore_t *sem);
 void signalSemaphore(semaphore_t *sem);
 

@@ -55,41 +55,67 @@ void addToList(TCB_t *toAdd, tcbQueue_t *queue[]){
 
 void SysTick_Handler(void) {
 	//check if any waiting tasks are done
-	TCB_t *prev = NULL;
-	tcbQueue_t *cur = waitPriorityQueue;
-	while(cur != NULL){
-		cur->waitTicks--;
-		if(cur->waitTicks == 0){
-			//task is done waiting!
-			cur->state = READY;
-			addToList(cur, readyListHead);
-			//remove task
-			if(prev == NULL){
-				//first task is done
-				waitListHead = cur->next;
-				cur->next = NULL;
-				cur = waitListHead;
-			}
-			else{
-				prev->next = cur->next;
-				cur->next = NULL;
-				cur = prev->next;
-			}
-		}
-		else{
-			prev = cur;
-			cur = cur->next;
+
+	//iterate through all the task in order of priority and then in fifo
+	for (taskPriority_t priority = HIGHEST_PRIORITY; priority < NUM_PRIORITIES; priority++){
+		if(waitPriorityQueue[priority]->head!=NULL){
+			TCB_t *TCB_ptr = waitPriorityQueue[priority]->head;
+			TCB_t *TCB_prev_ptr = NULL;
+			do {
+				//decrement time until wait ends
+				TCB_ptr->waitTicks--;
+				
+				//if task is done waiting
+				if(TCB_ptr->waitTicks == 0) {
+					//set state to ready and add to ready queue
+					TCB_ptr->state = READY;
+					addToList(TCB_ptr, readyPriorityQueue);
+					
+					//remove task from waiting queue
+					if(TCB_ptr == waitPriorityQueue[priority]->head){ 
+						if(TCB_ptr->next != NULL){//is only head
+							waitPriorityQueue[priority]->head = waitPriorityQueue[priority]->head->next;
+							TCB_ptr -> next = NULL;
+							TCB_ptr = waitPriorityQueue[priority]->head;
+						
+						} else { //is head and tail
+							waitPriorityQueue[priority]->head = NULL;
+							waitPriorityQueue[priority]->tail = NULL;	
+							TCB_ptr -> next = NULL;
+							TCB_ptr = NULL;
+						}
+						
+					} else if (TCB_ptr == waitPriorityQueue[priority]->tail){ //is only tail
+						TCB_prev_ptr->next = NULL;
+						waitPriorityQueue[priority]->tail = NULL;
+						TCB_ptr -> next = NULL;
+						TCB_ptr = NULL;
+					} else { //neither head or tail
+						TCB_prev_ptr->next = TCB_ptr->next;
+						TCB_ptr->next = NULL;
+						TCB_ptr = TCB_prev_ptr->next;
+					}
+				} else {
+					TCB_prev_ptr = TCB_ptr;
+					TCB_ptr = TCB_ptr->next;
+				}
+			} while(TCB_ptr!=NULL);
 		}
 	}
+
 
 	//check for timeslices
 	rtosTickCounter++;
 	if(rtosTickCounter - nextTimeSlice >= TIME_SLICE_TICKS){
-		//we are ready to move to the next task
-		//TODO unsure what to do if all tasks are waiting
-		if(readyListHead != NULL){
-			//notify PendSV_Handler we are ready to switch
-		SCB->ICSR |= SCB_ICSR_PENDSVSET_Msk;
+		//we are ready to switch to the next task
+
+		//check if there is a ready task to switch to
+		for (taskPriority_t priority = HIGHEST_PRIORITY; priority < NUM_PRIORITIES; priority++){
+			if (readyPriorityQueue[priority]->head!=NULL){
+				//notify PendSV_Handler we are ready to switch
+				SCB->ICSR |= SCB_ICSR_PENDSVSET_Msk;
+				break;
+			}
 		}
 	}
 }
@@ -132,6 +158,7 @@ void rtosInit(void){
 		TCBList[i].next = NULL;
 		TCBList[i].state = SUSPENDED;
 		TCBList[i].waitTicks = 0;
+		TCBList[i].taskPriority = DEFAULT_PRIORITY;
 	}
 
 	//copy over main stack to first task's stack
@@ -139,6 +166,9 @@ void rtosInit(void){
 	numTasks = 1;
 	memcpy((void *)(TCBList[MAIN_TASK_ID].stackPointer - TASK_STACK_SIZE), (void *)((*((uint32_t *)SCB->VTOR)) - TASK_STACK_SIZE), TASK_STACK_SIZE);
 
+	//set Main Task to lowest Priority to act as idle thread
+	TCBList[MAIN_TASK_ID].taskPriority = LOWEST_PRIORITY;
+	
 	//change main stack pointer to be inside init
 	TCBList[MAIN_TASK_ID].stackPointer = TCBList[MAIN_TASK_ID].baseOfStack - ((*((uint32_t *)SCB->VTOR)) - __get_MSP());
 
@@ -159,7 +189,6 @@ void rtosInit(void){
 		waitPriorityQueue[priority] = NULL;
 	}
 
-
 	//set up timer variables
 	rtosTickCounter = 0;
 	nextTimeSlice = TIME_SLICE_TICKS;
@@ -168,8 +197,8 @@ void rtosInit(void){
 	SysTick_Config(SystemCoreClock/RTOS_TICK_FREQ);
 }
 
-//TODO will probably need to make this atomic
 void rtosThreadNew(rtosTaskFunc_t func, void *arg, taskPriority_t taskPriority){
+  __disable_irq();
   if(numTasks == 0){
     //rtos has not yet, return and notify somehow???
     return;
@@ -196,6 +225,7 @@ void rtosThreadNew(rtosTaskFunc_t func, void *arg, taskPriority_t taskPriority){
 
   //bump up num tasks
   numTasks++;
+  __enable_irq();
 }
 
 void semaphoreInit(semaphore_t *sem, uint8_t count){
@@ -225,7 +255,7 @@ void signalSemaphore(semaphore_t *sem){
 		TCB_t *temp = sem->waitListHead->next;
 		sem->waitListHead->next = NULL;
 		sem->waitListHead->state = READY;
-		addToList(sem->waitListHead, &readyListHead);
+		addToList(sem->waitListHead, readyPriorityQueue);
 		sem->waitListHead = temp;
 	}
 	__enable_irq();
@@ -264,7 +294,7 @@ void releaseMutex(mutex_t *mutex){
 		TCB_t* temp = mutex->waitListHead->next;
 		mutex->waitListHead->next = NULL;
 		mutex->waitListHead->state = READY;
-		addToList(mutex->waitListHead, &readyListHead);
+		addToList(mutex->waitListHead, readyPriorityQueue);
 		mutex->waitListHead = temp;
 	}
 	__enable_irq();
