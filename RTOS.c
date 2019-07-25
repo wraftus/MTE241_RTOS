@@ -195,7 +195,7 @@ void signalSemaphor(semaphore_t *sem){
 	__disable_irq();
 	sem->count++;
 	if(sem->waitListHead != NULL){
-		semaphore_t *temp = sem->waitListHead->next;
+		TCB_t *temp = sem->waitListHead->next;
 		sem->waitListHead->next = NULL;
 		sem->waitListHead->state = READY;
 		addToList(sem->waitListHead, &readyListHead);
@@ -231,10 +231,10 @@ void releaseMutex(mutex_t *mutex){
 	}
 	if(mutex->waitListHead == NULL){
 		//nothing is waiting on this mutex
-		mutex = -1;
+		mutex->owner = -1;
 	} else{
 		mutex->owner = mutex->waitListHead->id;
-		mutex_t* temp = mutex->waitListHead->next;
+		TCB_t* temp = mutex->waitListHead->next;
 		mutex->waitListHead->next = NULL;
 		mutex->waitListHead->state = READY;
 		addToList(mutex->waitListHead, &readyListHead);
@@ -255,11 +255,11 @@ void rtosWait(uint32_t ticks){
 }
 
 __asm void rtosEnterFunction(void){
-	PUSH	{R4}
+	PUSH	{R4-R11}
 	BX	  LR
 }
 
 __asm void rtosExitFunction(void){
-	POP	{R4}
+	POP	{R4-R11}
 	BX	LR
 }
