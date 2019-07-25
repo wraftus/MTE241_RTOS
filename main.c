@@ -25,18 +25,18 @@ barrier_t barrier;
 void syncOnBarrier(barrier_t *barrier) {
 	rtosEnterFunction();
   // increase barrier's count by acquiring the mutex
-  acquireMutex(&(barrier->mutex));
+  rtosAcquireMutex(&(barrier->mutex));
   barrier->count++;
-  releaseMutex(&(barrier->mutex));
+  rtosReleaseMutex(&(barrier->mutex));
 
   // if count = n, then we are the last to sync, so signal semaphore
   if (barrier->count == barrier->n) {
-    signalSemaphore(&(barrier->turnstile));
+    rtosSignalSemaphore(&(barrier->turnstile));
   }
 
   // wait on the turnstile, and signal it when you go through
-  waitOnSemaphore(&(barrier->turnstile));
-  signalSemaphore(&(barrier->turnstile));
+  rtosWaitOnSemaphore(&(barrier->turnstile));
+  rtosSignalSemaphore(&(barrier->turnstile));
 	rtosExitFunction();
 }
 
@@ -54,13 +54,13 @@ void ledTimerTask(void *args) {
       (1UL << led_pos2[0]) | (1UL << led_pos2[1]) | (1UL << led_pos2[2]) | (1UL << led_pos2[3]) | (1UL << led_pos2[4]);
 
   // tell GLCD we are ready
-  waitOnSemaphore(&draw_sem);
-  signalSemaphore(&draw_sem);
-  acquireMutex(&draw_mutex);
+  rtosWaitOnSemaphore(&draw_sem);
+  rtosSignalSemaphore(&draw_sem);
+  rtosAcquireMutex(&draw_mutex);
   __disable_irq();
   GLCD_DisplayString(2 + readyOrder++, 0, 1, taskName);
   __enable_irq();
-  releaseMutex(&draw_mutex);
+  rtosReleaseMutex(&draw_mutex);
 
   // wait until all other tasks are ready to go
   syncOnBarrier(&barrier);
@@ -98,24 +98,24 @@ void printTask(void *args) {
   sprintf(taskName, "printTask for %s", name);
 
   // tell GLCD we are ready
-  waitOnSemaphore(&draw_sem);
-  signalSemaphore(&draw_sem);
-  acquireMutex(&draw_mutex);
+  rtosWaitOnSemaphore(&draw_sem);
+  rtosSignalSemaphore(&draw_sem);
+  rtosAcquireMutex(&draw_mutex);
   __disable_irq();
   GLCD_DisplayString(2 + readyOrder++, 0, 1, taskName);
   __enable_irq();
-  releaseMutex(&draw_mutex);
+  rtosReleaseMutex(&draw_mutex);
 
   // wait until all other tasks are ready to go
   syncOnBarrier(&barrier);
   while (1) {
     // aquire the mutex
-    acquireMutex(&print_mutex);
+    rtosAcquireMutex(&print_mutex);
     // print out the message
     printf("Hi! My name is %s, and I currently have the mutex.\n", name);
     // wait for 0.5s
     rtosWait(500);
-    releaseMutex(&print_mutex);
+    rtosReleaseMutex(&print_mutex);
   }
 }
 
@@ -124,8 +124,8 @@ void lazyGLCDTask(void *args) {
   unsigned char taskName[] = "lazyGLCDTask";
 
   // set up GLCD
-  acquireMutex(&draw_mutex);
-  signalSemaphore(&draw_sem);
+  rtosAcquireMutex(&draw_mutex);
+  rtosSignalSemaphore(&draw_sem);
   __disable_irq();
   GLCD_Init();
   GLCD_SetBackColor(Black);
@@ -133,22 +133,22 @@ void lazyGLCDTask(void *args) {
   GLCD_Clear(Black);
   GLCD_DisplayString(0, 0, 1, title);
   __enable_irq();
-  releaseMutex(&draw_mutex);
+  rtosReleaseMutex(&draw_mutex);
 
   // marinate
   rtosWait(1500);
 
   // tell GLCD we are ready
-  acquireMutex(&draw_mutex);
+  rtosAcquireMutex(&draw_mutex);
   __disable_irq();
   GLCD_DisplayString(2 + readyOrder++, 0, 1, taskName);
   __enable_irq();
-  releaseMutex(&draw_mutex);
+  rtosReleaseMutex(&draw_mutex);
 
   // wait until all other tasks are ready to go
   syncOnBarrier(&barrier);
   while(1){
-		releaseMutex(&print_mutex);
+		rtosReleaseMutex(&print_mutex);
 	}
 }
 
@@ -157,15 +157,15 @@ int main(void) {
   printf("Main Task!\n");
 
   // intialize printing mutex
-  mutexInit(&print_mutex);
+  rtosMutexInit(&print_mutex);
   // initialize draw mutex and readyOrder
-  mutexInit(&draw_mutex);
-  semaphoreInit(&draw_sem, 0);
+  rtosMutexInit(&draw_mutex);
+  rtosSemaphoreInit(&draw_sem, 0);
   readyOrder = 0;
 
   // initialize barrier type
-  mutexInit(&(barrier.mutex));
-  semaphoreInit(&(barrier.turnstile), 0);
+  rtosMutexInit(&(barrier.mutex));
+  rtosSemaphoreInit(&(barrier.turnstile), 0);
   barrier.count = 0;
   barrier.n = 4;
 

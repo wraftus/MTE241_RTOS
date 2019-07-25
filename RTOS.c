@@ -232,7 +232,7 @@ void rtosThreadNew(rtosTaskFunc_t func, void *arg, taskPriority_t taskPriority) 
   rtosExitFunction();
 }
 
-void semaphoreInit(semaphore_t *sem, uint8_t count) {
+void rtosSemaphoreInit(semaphore_t *sem, uint8_t count) {
   rtosEnterFunction();
   sem->count = count;
   for (taskPriority_t priority = HIGHEST_PRIORITY; priority < NUM_PRIORITIES; priority++) {
@@ -242,7 +242,7 @@ void semaphoreInit(semaphore_t *sem, uint8_t count) {
   rtosExitFunction();
 }
 
-void waitOnSemaphore(semaphore_t *sem) {
+void rtosWaitOnSemaphore(semaphore_t *sem) {
   rtosEnterFunction();
   __disable_irq();
   if (sem->count > 0) {
@@ -258,7 +258,7 @@ void waitOnSemaphore(semaphore_t *sem) {
   rtosExitFunction();
 }
 
-void signalSemaphore(semaphore_t *sem) {
+void rtosSignalSemaphore(semaphore_t *sem) {
   rtosEnterFunction();
   __disable_irq();
   sem->count++;
@@ -284,7 +284,7 @@ void signalSemaphore(semaphore_t *sem) {
   rtosExitFunction();
 }
 
-void mutexInit(mutex_t *mutex) {
+void rtosMutexInit(mutex_t *mutex) {
   rtosEnterFunction();
   mutex->owner = NO_OWNER;
   for (taskPriority_t priority = HIGHEST_PRIORITY; priority < NUM_PRIORITIES; priority++) {
@@ -294,7 +294,7 @@ void mutexInit(mutex_t *mutex) {
   rtosExitFunction();
 }
 
-void acquireMutex(mutex_t *mutex) {
+void rtosAcquireMutex(mutex_t *mutex) {
   rtosEnterFunction();
   __disable_irq();
   if (mutex->owner == NO_OWNER) {
@@ -309,7 +309,7 @@ void acquireMutex(mutex_t *mutex) {
   rtosExitFunction();
 }
 
-void releaseMutex(mutex_t *mutex) {
+void rtosReleaseMutex(mutex_t *mutex) {
   rtosEnterFunction();
   __disable_irq();
   if (mutex->owner != runningTCB->id) {
