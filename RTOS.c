@@ -225,10 +225,22 @@ void releaseMutex(mutex_t *mutex){
 }
 
 void rtosWait(uint32_t ticks){
+	rtosEnterFunction();
 	__disable_irq();
 	runningTCB->waitTicks = ticks;
 	runningTCB->state = WAITING;
 	addToList(runningTCB, &waitListHead);
 	forceContextSwitch();
 	__enable_irq();
+	rtosExitFunction();
+}
+
+__asm void rtosEnterFunction(void){
+	PUSH	{R4}
+	BX	  LR
+}
+
+__asm void rtosExitFunction(void){
+	POP	{R4}
+	BX	LR
 }
