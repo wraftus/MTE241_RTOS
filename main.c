@@ -41,7 +41,7 @@ int main(void){
 	printf("0: Main Task!\n");
 	
 	//rtosThreadNew(task1, (void *)100);
-	rtosThreadNew(task2, NULL);
+	//rtosThreadNew(task2, NULL);
 	while(1){
 		counter++;
 	}

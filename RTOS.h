@@ -1,6 +1,6 @@
-#pragma once
+#ifndef __RTOS_H
+#define __RTOS_H
 
-#include <LPC17xx.h> //todo remove
 typedef enum {HIGHEST_PRIORITY = 0, DEFAULT_PRIORITY = 3 , LOWEST_PRIORITY = 6, NUM_PRIORITIES} taskPriority_t;
 
 typedef enum {RUNNING, READY, WAITING, SUSPENDED} taskState_t;
@@ -31,7 +31,7 @@ typedef struct {
 } semaphore_t;
 
 typedef struct{
-	uint8_t owner;
+	int8_t owner;
         tcbQueue_t *waitingPriorityQueue[NUM_PRIORITIES];
 } mutex_t;
 
@@ -51,3 +51,4 @@ void rtosWait(uint32_t ticks);
 
 void rtosEnterFunction(void);
 void rtosExitFunction(void);
+#endif /* __RTOS_H */
