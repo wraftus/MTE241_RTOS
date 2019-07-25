@@ -1,7 +1,7 @@
-#include "GLCD.h"
-#include "RTOS.h"
 #include <LPC17xx.h>
+#include "RTOS.h"
 #include <stdio.h>
+#include "GLCD.h"
 
 const uint8_t led_pos1[3] = {31, 29, 28};
 const uint8_t led_pos2[5] = {6, 5, 4, 3, 2};
