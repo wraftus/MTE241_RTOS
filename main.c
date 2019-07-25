@@ -25,7 +25,7 @@ semaphore_t sneakySem;
 
 // non reusable barrier
 void syncOnBarrier(barrier_t *barrier) {
-	rtosEnterFunction();
+  rtosEnterFunction();
   // increase barrier's count by acquiring the mutex
   rtosAcquireMutex(&(barrier->mutex));
   barrier->count++;
@@ -39,7 +39,7 @@ void syncOnBarrier(barrier_t *barrier) {
   // wait on the turnstile, and signal it when you go through
   rtosWaitOnSemaphore(&(barrier->turnstile));
   rtosSignalSemaphore(&(barrier->turnstile));
-	rtosExitFunction();
+  rtosExitFunction();
 }
 
 // Task that creates a clock on the LEDs on the board
@@ -66,7 +66,7 @@ void ledTimerTask(void *args) {
 
   // wait until all other tasks are ready to go
   syncOnBarrier(&barrier);
-	uint32_t timer = 0;
+  uint32_t timer = 0;
   while (1) {
     // write count to leds, going through each bit
     for (uint8_t bit = 0; bit < 8; bit++) {
@@ -99,11 +99,11 @@ void printTask(void *args) {
 
   sprintf(taskName, "printTask for %s", name);
 
-	//we are ready to draw
-	rtosWaitOnSemaphore(&draw_sem);
+  // we are ready to draw
+  rtosWaitOnSemaphore(&draw_sem);
   rtosSignalSemaphore(&draw_sem);
-	//marinate
-	rtosWait(1000);
+  // marinate
+  rtosWait(1000);
 
   // tell GLCD we are ready
   rtosAcquireMutex(&draw_mutex);
@@ -122,12 +122,12 @@ void printTask(void *args) {
     // wait for 1s
     rtosWait(1000);
     rtosReleaseMutex(&print_mutex);
-		rtosStatus_t status = rtosReleaseMutex(&print_mutex);
-		if(status == RTOS_MUTEX_NOT_OWNED){
-			rtosAcquireMutex(&print_mutex);
-			printf("Oops! %s was dumb and tried to release a mutex they did not own :(\n", name);
-			rtosReleaseMutex(&print_mutex);
-		}
+    rtosStatus_t status = rtosReleaseMutex(&print_mutex);
+    if (status == RTOS_MUTEX_NOT_OWNED) {
+      rtosAcquireMutex(&print_mutex);
+      printf("Oops! %s was dumb and tried to release a mutex they did not own :(\n", name);
+      rtosReleaseMutex(&print_mutex);
+    }
   }
 }
 
@@ -159,33 +159,34 @@ void lazyGLCDTask(void *args) {
 
   // wait until all other tasks are ready to go
   syncOnBarrier(&barrier);
-	
-	//say every thing is done
-	unsigned char doneMessage[] = "All Synced :)";
-	
-	rtosAcquireMutex(&draw_mutex);
+
+  // say every thing is done
+  unsigned char doneMessage[] = "All Synced :)";
+
+  rtosAcquireMutex(&draw_mutex);
   rtosEnterCriticalSection();
   GLCD_DisplayString(7, 0, 1, doneMessage);
   rtosExitCriticalSection();
   rtosReleaseMutex(&draw_mutex);
-  while(1);
+  while (1){
+  }
 }
 
-void sneakyTask(void *args){
-	rtosAcquireMutex(&draw_mutex);
-	rtosSignalSemaphore(&sneakySem);
-	rtosWait(2500);
-	rtosReleaseMutex(&draw_mutex);
-	while(1){
-	}
+void sneakyTask(void *args) {
+  rtosAcquireMutex(&draw_mutex);
+  rtosSignalSemaphore(&sneakySem);
+  rtosWait(2500);
+  rtosReleaseMutex(&draw_mutex);
+  while (1) {
+  }
 }
 
 int main(void) {
   rtosInit();
   printf("Main Task!\n");
 
-	//initialize sneaky sem to 0
-	rtosSemaphoreInit(&sneakySem, 0);
+  // initialize sneaky sem to 0
+  rtosSemaphoreInit(&sneakySem, 0);
   // intialize printing mutex
   rtosMutexInit(&print_mutex);
   // initialize draw mutex and readyOrder
@@ -199,11 +200,11 @@ int main(void) {
   barrier.count = 0;
   barrier.n = 4;
 
-	//start sneaky task
-	rtosThreadNew(sneakyTask, NULL, LOWEST_PRIORITY);
-	
-	//wait on sneaky semaphore before starting remaining tasks
-	rtosWaitOnSemaphore(&sneakySem);
+  // start sneaky task
+  rtosThreadNew(sneakyTask, NULL, LOWEST_PRIORITY);
+
+  // wait on sneaky semaphore before starting remaining tasks
+  rtosWaitOnSemaphore(&sneakySem);
   // start timer task
   rtosThreadNew(ledTimerTask, NULL, DEFAULT_PRIORITY);
 
@@ -214,5 +215,6 @@ int main(void) {
   // start lazy GLCD task
   rtosThreadNew(lazyGLCDTask, NULL, DEFAULT_PRIORITY);
 
-  while(1);
+  while (1){
+  }
 }

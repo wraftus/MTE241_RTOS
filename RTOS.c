@@ -1,7 +1,7 @@
-#include <LPC17xx.h>
-#include <core_cm3.h>
 #include "RTOS.h"
 #include "context.h"
+#include <LPC17xx.h>
+#include <core_cm3.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -120,10 +120,10 @@ void SysTick_Handler(void) {
       }
     }
   } else if (inCriticalSection) {
-		if(rtosTickCounter - nextTimeSlice >= TIME_SLICE_TICKS){
-			nextTimeSlice++;
-		}
-	}
+    if (rtosTickCounter - nextTimeSlice >= TIME_SLICE_TICKS) {
+      nextTimeSlice++;
+    }
+  }
 }
 
 void PendSV_Handler(void) {
@@ -202,8 +202,8 @@ void rtosInit(void) {
   rtosTickCounter = 0;
   nextTimeSlice = TIME_SLICE_TICKS;
 
-	//initialize inCriticalSection
-	inCriticalSection = 0;
+  // initialize inCriticalSection
+  inCriticalSection = 0;
 
   // Set systick interrupt to fire at the time slice frequency
   SysTick_Config(SystemCoreClock / RTOS_TICK_FREQ);
@@ -317,8 +317,8 @@ rtosStatus_t rtosAcquireMutex(mutex_t *mutex) {
     mutex->owner = runningTCB->id;
   } else { // mutex already owned
 
-    if (TCBList[mutex->owner].taskPriority > runningTCB->taskPriority){
-      //elevate mutex owner priority to level of running TCB
+    if (TCBList[mutex->owner].taskPriority > runningTCB->taskPriority) {
+      // elevate mutex owner priority to level of running TCB
       mutex->storedPriority = TCBList[mutex->owner].taskPriority;
       TCBList[mutex->owner].taskPriority = runningTCB->taskPriority;
 
@@ -327,12 +327,12 @@ rtosStatus_t rtosAcquireMutex(mutex_t *mutex) {
 
       TCB_t *TCB_ptr = queue[priority].head;
       TCB_t *TCB_prev_ptr = NULL;
-      //find task in queue
-      while (TCB_ptr->id != mutex->owner){
-          TCB_prev_ptr = TCB_ptr;
-          TCB_ptr = TCB_ptr->next;
+      // find task in queue
+      while (TCB_ptr->id != mutex->owner) {
+        TCB_prev_ptr = TCB_ptr;
+        TCB_ptr = TCB_ptr->next;
       }
-      //remove task from queue
+      // remove task from queue
       if (TCB_ptr == queue[priority].head) { // if task is the head
         if (TCB_ptr->next == NULL) {         // if its the only task in the queue
           queue[priority].tail = NULL;
@@ -350,7 +350,7 @@ rtosStatus_t rtosAcquireMutex(mutex_t *mutex) {
         TCB_ptr->next = NULL;
         TCB_ptr = TCB_prev_ptr->next;
       }
-      //insert elevated mutex owner task back into same queue,but with elevated priority
+      // insert elevated mutex owner task back into same queue,but with elevated priority
       addToList(&(TCBList[mutex->owner]), queue);
     }
 
@@ -368,16 +368,15 @@ rtosStatus_t rtosReleaseMutex(mutex_t *mutex) {
   __disable_irq();
   if (mutex->owner != runningTCB->id) {
     // cannot release a mutex you do not own
-		rtosExitFunction();
+    rtosExitFunction();
     return RTOS_MUTEX_NOT_OWNED;
   }
 
-  if (mutex->storedPriority != NO_PRIORITY){ //if need to restore unelevated priority
-    //return elevated task to original priority
+  if (mutex->storedPriority != NO_PRIORITY) { // if need to restore unelevated priority
+    // return elevated task to original priority
     TCBList[mutex->owner].taskPriority = mutex->storedPriority;
-    //reset stored priority
+    // reset stored priority
     mutex->storedPriority = NO_PRIORITY;
-
   }
 
   for (taskPriority_t priority = HIGHEST_PRIORITY; priority < NUM_PRIORITIES; priority++) {
@@ -395,7 +394,7 @@ rtosStatus_t rtosReleaseMutex(mutex_t *mutex) {
       unblockedTask->state = READY;
       addToList(unblockedTask, readyTaskPriorityQueue);
       __enable_irq();
-			rtosExitFunction();
+      rtosExitFunction();
       return RTOS_OK;
     }
   }
@@ -404,14 +403,14 @@ rtosStatus_t rtosReleaseMutex(mutex_t *mutex) {
   mutex->owner = NO_OWNER;
   __enable_irq();
   rtosExitFunction();
-	return RTOS_OK;
+  return RTOS_OK;
 }
 
 rtosStatus_t rtosWait(uint32_t ticks) {
   rtosEnterFunction();
   __disable_irq();
-  if(numTasks == 0){
-    //rtos not initialized
+  if (numTasks == 0) {
+    // rtos not initialized
     return RTOS_NOT_INIT;
   }
   runningTCB->waitTicks = ticks;
@@ -433,13 +432,13 @@ __asm void rtosExitFunction(void) {
 		BX LR
 }
 
-void rtosEnterCriticalSection(void){
-	__disable_irq();
-	inCriticalSection = 1;
-	__enable_irq();
+void rtosEnterCriticalSection(void) {
+  __disable_irq();
+  inCriticalSection = 1;
+  __enable_irq();
 }
-void rtosExitCriticalSection(void){
-	__disable_irq();
-	inCriticalSection = 0;
-	__enable_irq();
+void rtosExitCriticalSection(void) {
+  __disable_irq();
+  inCriticalSection = 0;
+  __enable_irq();
 }

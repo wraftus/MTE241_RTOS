@@ -4,7 +4,7 @@
  */
 #include "context.h"
 
-__asm uint32_t storeContext(void) { 
+__asm uint32_t storeContext(void) {
 		MRS 		R0,PSP
 		STMFD		R0!,{R4-R11}
 		BX 			LR
