@@ -284,19 +284,20 @@ void signalSemaphore(semaphore_t *sem){
 }
 
 void mutexInit(mutex_t *mutex){
-	mutex->owner = -1;
-	mutex->waitListHead = NULL;
+	mutex->owner = NO_OWNER;
+  for (taskPriority_t priority = HIGHEST_PRIORITY; priority < NUM_PRIORITIES; priority++){
+    mutex->waitingPriorityQueue[priority] = NULL;
+  }
 }
 
 void acquireMutex(mutex_t *mutex){
 	__disable_irq();
-	if(mutex->owner == -1){
-		//mutex is not yet owned
+	if(mutex->owner == NO_OWNER){
 		mutex->owner = runningTCB->id;
 	} else {
-		//mutex is already owned
+		//mutex already owned
 		runningTCB->state = WAITING;
-		addToList(runningTCB, &(mutex->waitListHead));
+		addToList(runningTCB, mutex->waitingPriorityQueue);
 		forceContextSwitch();
 	}
 	__enable_irq();
@@ -308,18 +309,31 @@ void releaseMutex(mutex_t *mutex){
 		//cannot release a mutex you do not own
 		return;
 	}
-	if(mutex->waitListHead == NULL){
-		//nothing is waiting on this mutex
-		mutex->owner = -1;
-	} else{
-		mutex->owner = mutex->waitListHead->id;
-		TCB_t* temp = mutex->waitListHead->next;
-		mutex->waitListHead->next = NULL;
-		mutex->waitListHead->state = READY;
-		addToList(mutex->waitListHead, readyTaskPriorityQueue);
-		mutex->waitListHead = temp;
-	}
-	__enable_irq();
+
+  for (taskPriority_t priority = HIGHEST_PRIORITY; priority < NUM_PRIORITIES; priority++){
+    if (mutex->waitingPriorityQueue[priority]->head!=NULL){
+      TCB_t *unblockedTask = mutex->waitingPriorityQueue[priority]->head;
+
+      if(mutex->waitingPriorityQueue[priority]->head->next != NULL){ //if not only task in list
+        mutex->waitingPriorityQueue[priority]->head = mutex->waitingPriorityQueue[priority]->head->next;
+      } else { //priority level is now empty
+        mutex->waitingPriorityQueue[priority]->head = NULL;
+        mutex->waitingPriorityQueue[priority]->tail = NULL;
+      }
+
+      mutex->owner = unblockedTask->id;
+
+      //set task to ready state and queue in ready task queue
+      unblockedTask->next = NULL;
+      unblockedTask->state = READY;
+      addToList(unblockedTask, readyTaskPriorityQueue);
+      break;
+    }
+  }
+
+  //Nothing waiting on mutex
+  mutex->owner = NO_OWNER;
+  __enable_irq();
 }
 
 void rtosWait(uint32_t ticks){
