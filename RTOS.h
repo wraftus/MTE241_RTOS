@@ -1,36 +1,36 @@
 #ifndef __RTOS_H
 #define __RTOS_H
 
-typedef enum {HIGHEST_PRIORITY = 0, DEFAULT_PRIORITY = 3 , LOWEST_PRIORITY = 6, NUM_PRIORITIES} taskPriority_t;
+typedef enum { HIGHEST_PRIORITY = 0, DEFAULT_PRIORITY = 3, LOWEST_PRIORITY = 6, NUM_PRIORITIES } taskPriority_t;
 
-typedef enum {RUNNING, READY, WAITING, SUSPENDED} taskState_t;
+typedef enum { RUNNING, READY, WAITING, SUSPENDED } taskState_t;
 
 typedef struct TCB_t TCB_t;
-struct TCB_t{
-	uint8_t id;
-	uint32_t baseOfStack;
-	uint32_t stackPointer;
-	taskPriority_t taskPriority;
-	uint32_t waitTicks;
-	taskState_t state;
-	TCB_t *next;
+struct TCB_t {
+  uint8_t id;
+  uint32_t baseOfStack;
+  uint32_t stackPointer;
+  taskPriority_t taskPriority;
+  uint32_t waitTicks;
+  taskState_t state;
+  TCB_t *next;
 };
 
 typedef struct tcbQueue {
-    TCB_t* head;
-    TCB_t* tail;
-}tcbQueue_t;
+  TCB_t *head;
+  TCB_t *tail;
+} tcbQueue_t;
 
 typedef void (*rtosTaskFunc_t)(void *args);
 
 typedef struct {
-	uint8_t count;
-	tcbQueue_t waitingPriorityQueue[NUM_PRIORITIES];
+  uint8_t count;
+  tcbQueue_t waitingPriorityQueue[NUM_PRIORITIES];
 } semaphore_t;
 
-typedef struct{
-	int8_t owner;
-	tcbQueue_t waitingPriorityQueue[NUM_PRIORITIES];
+typedef struct {
+  int8_t owner;
+  tcbQueue_t waitingPriorityQueue[NUM_PRIORITIES];
 } mutex_t;
 
 void rtosInit(void);
