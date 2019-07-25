@@ -201,7 +201,7 @@ void rtosInit(void) {
   // set up timer variables
   rtosTickCounter = 0;
   nextTimeSlice = TIME_SLICE_TICKS;
-	
+
 	//initialize inCriticalSection
 	inCriticalSection = 0;
 
@@ -209,16 +209,16 @@ void rtosInit(void) {
   SysTick_Config(SystemCoreClock / RTOS_TICK_FREQ);
 }
 
-void rtosThreadNew(rtosTaskFunc_t func, void *arg, taskPriority_t taskPriority) {
+rtosStatus_t rtosThreadNew(rtosTaskFunc_t func, void *arg, taskPriority_t taskPriority) {
   rtosEnterFunction();
   __disable_irq();
   if (numTasks == 0) {
     // rtos has not yet, return and notify somehow???
-    return;
+    return RTOS_NOT_INIT;
   }
   if (numTasks == MAX_NUM_TASKS) {
     // Max number of tasks reached, return and notify somehow???
-    return;
+    return RTOS_MAX_TASKS;
   }
 
   // Get next task block
@@ -240,9 +240,10 @@ void rtosThreadNew(rtosTaskFunc_t func, void *arg, taskPriority_t taskPriority) 
   numTasks++;
   __enable_irq();
   rtosExitFunction();
+  return RTOS_OK;
 }
 
-void rtosSemaphoreInit(semaphore_t *sem, uint8_t count) {
+rtosStatus_t rtosSemaphoreInit(semaphore_t *sem, uint8_t count) {
   rtosEnterFunction();
   sem->count = count;
   for (taskPriority_t priority = HIGHEST_PRIORITY; priority < NUM_PRIORITIES; priority++) {
@@ -250,9 +251,10 @@ void rtosSemaphoreInit(semaphore_t *sem, uint8_t count) {
     sem->waitingPriorityQueue[priority].tail = NULL;
   }
   rtosExitFunction();
+  return RTOS_OK;
 }
 
-void rtosWaitOnSemaphore(semaphore_t *sem) {
+rtosStatus_t rtosWaitOnSemaphore(semaphore_t *sem) {
   rtosEnterFunction();
   __disable_irq();
   if (sem->count > 0) {
@@ -266,9 +268,10 @@ void rtosWaitOnSemaphore(semaphore_t *sem) {
   }
   __enable_irq();
   rtosExitFunction();
+  return RTOS_OK;
 }
 
-void rtosSignalSemaphore(semaphore_t *sem) {
+rtosStatus_t rtosSignalSemaphore(semaphore_t *sem) {
   rtosEnterFunction();
   __disable_irq();
   sem->count++;
@@ -292,9 +295,10 @@ void rtosSignalSemaphore(semaphore_t *sem) {
   }
   __enable_irq();
   rtosExitFunction();
+  return RTOS_OK;
 }
 
-void rtosMutexInit(mutex_t *mutex) {
+rtosStatus_t rtosMutexInit(mutex_t *mutex) {
   rtosEnterFunction();
   mutex->owner = NO_OWNER;
   for (taskPriority_t priority = HIGHEST_PRIORITY; priority < NUM_PRIORITIES; priority++) {
@@ -303,9 +307,10 @@ void rtosMutexInit(mutex_t *mutex) {
     mutex->storedPriority = NO_PRIORITY;
   }
   rtosExitFunction();
+  return RTOS_OK;
 }
 
-void rtosAcquireMutex(mutex_t *mutex) {
+rtosStatus_t rtosAcquireMutex(mutex_t *mutex) {
   rtosEnterFunction();
   __disable_irq();
   if (mutex->owner == NO_OWNER) {
@@ -355,6 +360,7 @@ void rtosAcquireMutex(mutex_t *mutex) {
   }
   __enable_irq();
   rtosExitFunction();
+  return RTOS_OK;
 }
 
 void rtosReleaseMutex(mutex_t *mutex) {
@@ -371,7 +377,7 @@ void rtosReleaseMutex(mutex_t *mutex) {
     TCBList[mutex->owner].taskPriority = mutex->storedPriority;
     //reset stored priority
     mutex->storedPriority = NO_PRIORITY;
-		
+
   }
 
   for (taskPriority_t priority = HIGHEST_PRIORITY; priority < NUM_PRIORITIES; priority++) {
@@ -400,19 +406,24 @@ void rtosReleaseMutex(mutex_t *mutex) {
   rtosExitFunction();
 }
 
-void rtosWait(uint32_t ticks) {
+rtosStatus_t rtosWait(uint32_t ticks) {
   rtosEnterFunction();
   __disable_irq();
+  if(numTasks == 0){
+    //rtos not initialized
+    return RTOS_NOT_INIT;
+  }
   runningTCB->waitTicks = ticks;
   runningTCB->state = WAITING;
   addToList(runningTCB, waitingTaskPriorityQueue);
   forceContextSwitch();
   __enable_irq();
   rtosExitFunction();
+  return RTOS_OK;
 }
 
 __asm void rtosEnterFunction(void) {
-		PUSH{R4 - R11} 
+		PUSH{R4 - R11}
 		BX LR
 }
 

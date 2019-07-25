@@ -5,6 +5,8 @@ typedef enum { HIGHEST_PRIORITY = 0, DEFAULT_PRIORITY = 3, LOWEST_PRIORITY = 6, 
 
 typedef enum { RUNNING, READY, WAITING, SUSPENDED } taskState_t;
 
+typedef enum {RTOS_OK, RTOS_NOT_INIT, RTOS_MAX_TASKS, RTOS_MUTEX_NOT_OWNED} rtosStatus_t;
+
 typedef struct TCB TCB_t;
 typedef struct tcbQueue tcbQueue_t;
 
@@ -40,17 +42,17 @@ typedef struct {
 
 void rtosInit(void);
 
-void rtosThreadNew(rtosTaskFunc_t func, void *arg, taskPriority_t taskPriority);
+rtosStatus_t rtosThreadNew(rtosTaskFunc_t func, void *arg, taskPriority_t taskPriority);
 
-void rtosSemaphoreInit(semaphore_t *sem, uint8_t count);
-void rtosWaitOnSemaphore(semaphore_t *sem);
-void rtosSignalSemaphore(semaphore_t *sem);
+rtosStatus_t rtosSemaphoreInit(semaphore_t *sem, uint8_t count);
+rtosStatus_t rtosWaitOnSemaphore(semaphore_t *sem);
+rtosStatus_t rtosSignalSemaphore(semaphore_t *sem);
 
-void rtosMutexInit(mutex_t *mutex);
-void rtosAcquireMutex(mutex_t *mutex);
-void rtosReleaseMutex(mutex_t *mutex);
+rtosStatus_t rtosMutexInit(mutex_t *mutex);
+rtosStatus_t rtosAcquireMutex(mutex_t *mutex);
+rtosStatus_t rtosReleaseMutex(mutex_t *mutex);
 
-void rtosWait(uint32_t ticks);
+rtosStatus_t rtosWait(uint32_t ticks);
 
 void rtosEnterFunction(void);
 void rtosExitFunction(void);
