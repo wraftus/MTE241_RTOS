@@ -31,7 +31,10 @@ typedef struct{
 	uint8_t count;
 	TCB_t *waitListHead;
 } semaphore_t;
-typedef int8_t mutex_t;
+typedef struct{
+	uint8_t owner;
+	TCB_t *waitListHead;
+} mutex_t;
 
 void rtosInit(void);
 

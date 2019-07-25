@@ -178,13 +178,15 @@ void semaphorInit(semaphore_t *sem, uint8_t count){
 
 void waitOnSemaphor(semaphore_t *sem){
 	__disable_irq();
-	if(sem->count == 0){
-		//semaphore is closed, wait until it is signalled
-		addToList(runningTCB, &(sem->waitListHead));
-		runningTCB->state = WAITING;
+	if(sem->count > 0){
+		//semaphore is open
+		sem->count--;
 	}
 	else{
-		sem->count--;
+		//semaphore is closed, wait until it is signalled
+		runningTCB->state = WAITING;
+		addToList(runningTCB, &(sem->waitListHead));
+		forceContextSwitch();
 	}
 	__enable_irq();
 }
@@ -193,34 +195,51 @@ void signalSemaphor(semaphore_t *sem){
 	__disable_irq();
 	sem->count++;
 	if(sem->waitListHead != NULL){
-		addToList(sem->waitListHead, &readyListHead);
+		semaphore_t *temp = sem->waitListHead->next;
+		sem->waitListHead->next = NULL;
 		sem->waitListHead->state = READY;
-		sem->waitListHead = sem->waitListHead->next;
+		addToList(sem->waitListHead, &readyListHead);
+		sem->waitListHead = temp;
 	}
 	__enable_irq();
 }
 
 void mutextInit(mutex_t *mutex){
-	*mutex = -1;
+	mutex->owner = -1;
+	mutex->waitListHead = NULL;
 }
 
 void aquireMutex(mutex_t *mutex){
 	__disable_irq();
-	while(*mutex != -1){
-		__enable_irq();
-		__disable_irq();
+	if(mutex->owner == -1){
+		//mutex is not yet owned
+		mutex->owner = runningTCB->id;
+	} else {
+		//mutex is already owned
+		runningTCB->state = WAITING;
+		addToList(runningTCB, &(mutex->waitListHead));
+		forceContextSwitch();
 	}
-	*mutex = runningTCB->id;
 	__enable_irq();
 }
 
 void releaseMutex(mutex_t *mutex){
-	if(*mutex != runningTCB->id){
+	__disable_irq();
+	if(mutex->owner != runningTCB->id){
 		//cannot release a mutex you do not own
 		return;
 	}
-	__disable_irq();
-	*mutex = -1;
+	if(mutex->waitListHead == NULL){
+		//nothing is waiting on this mutex
+		mutex = -1;
+	} else{
+		mutex->owner = mutex->waitListHead->id;
+		mutex_t* temp = mutex->waitListHead->next;
+		mutex->waitListHead->next = NULL;
+		mutex->waitListHead->state = READY;
+		addToList(mutex->waitListHead, &readyListHead);
+		mutex->waitListHead = temp;
+	}
 	__enable_irq();
 }
 
