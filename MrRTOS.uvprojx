@@ -410,6 +410,16 @@
               <FileType>5</FileType>
               <FilePath>.\context.h</FilePath>
             </File>
+            <File>
+              <FileName>GLCD_Scroll.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\GLCD_Scroll.c</FilePath>
+            </File>
+            <File>
+              <FileName>GLCD_SPI_LPC1700.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\GLCD_SPI_LPC1700.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>

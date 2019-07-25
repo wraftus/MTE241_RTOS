@@ -1,7 +1,7 @@
 #include <LPC17xx.h>
 #include "RTOS.h"
 #include <stdio.h>
-
+#include "GLCD.h"
 
 const uint8_t led_pos1[3] = {31, 29, 28};
 const uint8_t led_pos2[5] = {6, 5, 4, 3, 2};
@@ -10,6 +10,9 @@ mutex_t print_mutex;
 const char name1[] = "Walter";
 const char name2[] = "Melvin";
 
+mutex_t draw_mutex;
+semaphore_t draw_sem;
+uint8_t readyOrder;
 const uint8_t testTaskCount = 4;
 typedef struct { 
 	semaphore_t turnstile;
@@ -37,6 +40,8 @@ void syncOnBarrier(barrier_t *barrier){
 
 //Task that creates a clock on the LEDs on the board
 void ledTimerTask(void *args){
+	unsigned char taskName[] = "ledTimerTask";
+	
 	//set direction for leds to output
 	LPC_GPIO1->FIODIR |= (1UL << led_pos1[0]) | (1UL << led_pos1[1]) | (1UL << led_pos1[2]);
 	LPC_GPIO2->FIODIR |= (1UL << led_pos2[0]) | (1UL << led_pos2[1]) | (1UL << led_pos2[2]) | (1UL << led_pos2[3]) | (1UL << led_pos2[4]);
@@ -45,6 +50,15 @@ void ledTimerTask(void *args){
 	LPC_GPIO2->FIOCLR = (1UL << led_pos2[0]) | (1UL << led_pos2[1]) | (1UL << led_pos2[2]) | (1UL << led_pos2[3]) | (1UL << led_pos2[4]);
 	
 	uint32_t timer = 0;
+	
+	//tell GLCD we are ready
+	waitOnSemaphore(&draw_sem);
+	signalSemaphore(&draw_sem);
+	aquireMutex(&draw_mutex);
+	__disable_irq();
+	GLCD_DisplayString(2 + readyOrder++,0,1, taskName);
+	__enable_irq();
+	releaseMutex(&draw_mutex);
 	
 	//wait until all other tasks are ready to go
 	syncOnBarrier(&barrier);
@@ -76,6 +90,18 @@ void ledTimerTask(void *args){
 void printTask(void *args){
 	//get name from args
 	char *name = (char *)args;
+	unsigned char taskName[21];
+	
+	sprintf(taskName, "printTask for %s", name);
+	
+	//tell GLCD we are ready
+	waitOnSemaphore(&draw_sem);
+	signalSemaphore(&draw_sem);
+	aquireMutex(&draw_mutex);
+	__disable_irq();
+	GLCD_DisplayString(2 + readyOrder++,0,1, taskName);
+	__enable_irq();
+	releaseMutex(&draw_mutex);
 	
 	//wait until all other tasks are ready to go
 	syncOnBarrier(&barrier);
@@ -91,6 +117,31 @@ void printTask(void *args){
 }
 
 void lazyGLCDTask(void *args){
+	unsigned char title[] = "Tasks Ready To Run:";
+	unsigned char taskName[] = "lazyGLCDTask";
+	
+	//set up GLCD
+	aquireMutex(&draw_mutex);
+	signalSemaphore(&draw_sem);
+	__disable_irq();
+	GLCD_Init();
+	GLCD_SetBackColor(Black);
+	GLCD_SetTextColor(White);
+	GLCD_Clear(Black);
+	GLCD_DisplayString(0,0,1, title);
+	__enable_irq();
+	releaseMutex(&draw_mutex);
+	
+	//marinate
+	rtosWait(1500);
+	
+	//tell GLCD we are ready
+	aquireMutex(&draw_mutex);
+	__disable_irq();
+	GLCD_DisplayString(2 + readyOrder++,0,1, taskName);
+	__enable_irq();
+	releaseMutex(&draw_mutex);
+	
 	//wait until all other tasks are ready to go
 	syncOnBarrier(&barrier);
 	while(1);
@@ -102,6 +153,10 @@ int main(void){
 
 	//intialize printing mutex
 	mutextInit(&print_mutex);
+	//initialize draw mutex and readyOrder
+	mutextInit(&draw_mutex);
+	semaphoreInit(&draw_sem, 0);
+	readyOrder = 0;
 	
 	//initialize barrier type
 	mutextInit(&(barrier.mutex));
@@ -116,7 +171,9 @@ int main(void){
 	rtosThreadNew(printTask, (void *)name1);
 	rtosThreadNew(printTask, (void *)name2);
 	
+
 	//start lazy GLCD task
+	rtosThreadNew(lazyGLCDTask, NULL);
 	
 	while(1);
 }

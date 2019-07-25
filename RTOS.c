@@ -171,12 +171,15 @@ void rtosThreadNew(rtosTaskFunc_t func, void *arg){
 	numTasks++;
 }
 
-void semaphorInit(semaphore_t *sem, uint8_t count){
+void semaphoreInit(semaphore_t *sem, uint32_t count){
+	rtosEnterFunction();
 	sem->count = count;
 	sem->waitListHead = NULL;
+	rtosExitFunction();
 }
 
-void waitOnSemaphor(semaphore_t *sem){
+void waitOnSemaphore(semaphore_t *sem){
+	rtosEnterFunction();
 	__disable_irq();
 	if(sem->count > 0){
 		//semaphore is open
@@ -189,9 +192,11 @@ void waitOnSemaphor(semaphore_t *sem){
 		forceContextSwitch();
 	}
 	__enable_irq();
+	rtosExitFunction();
 }
 
-void signalSemaphor(semaphore_t *sem){
+void signalSemaphore(semaphore_t *sem){
+	rtosEnterFunction();
 	__disable_irq();
 	sem->count++;
 	if(sem->waitListHead != NULL){
@@ -202,6 +207,7 @@ void signalSemaphor(semaphore_t *sem){
 		sem->waitListHead = temp;
 	}
 	__enable_irq();
+	rtosExitFunction();
 }
 
 void mutextInit(mutex_t *mutex){
