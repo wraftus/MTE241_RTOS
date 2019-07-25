@@ -1,7 +1,7 @@
 #ifndef __RTOS_H
 #define __RTOS_H
 
-typedef enum { HIGHEST_PRIORITY = 0, DEFAULT_PRIORITY = 3, LOWEST_PRIORITY = 6, NUM_PRIORITIES } taskPriority_t;
+typedef enum { HIGHEST_PRIORITY = 0, DEFAULT_PRIORITY = 3, LOWEST_PRIORITY = 6, NO_PRIORITY, NUM_PRIORITIES = NO_PRIORITY } taskPriority_t;
 
 typedef enum { RUNNING, READY, WAITING, SUSPENDED } taskState_t;
 
@@ -13,6 +13,7 @@ struct TCB_t {
   taskPriority_t taskPriority;
   uint32_t waitTicks;
   taskState_t state;
+  tcbQueue_t *currentQueue[];
   TCB_t *next;
 };
 
@@ -30,6 +31,7 @@ typedef struct {
 
 typedef struct {
   int8_t owner;
+  taskPriority_t storedPriority;
   tcbQueue_t waitingPriorityQueue[NUM_PRIORITIES];
 } mutex_t;
 
