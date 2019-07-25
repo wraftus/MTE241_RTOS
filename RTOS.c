@@ -34,6 +34,8 @@ tcbQueue_t waitingTaskPriorityQueue[NUM_PRIORITIES];
 
 const int8_t NO_OWNER = -1;
 
+uint8_t inCriticalSection;
+
 // This should only be called atomically
 void forceContextSwitch() {
   rtosTickCounter = nextTimeSlice;
@@ -105,7 +107,7 @@ void SysTick_Handler(void) {
 
   // check for timeslices
   rtosTickCounter++;
-  if (rtosTickCounter - nextTimeSlice >= TIME_SLICE_TICKS) {
+  if (rtosTickCounter - nextTimeSlice >= TIME_SLICE_TICKS && !inCriticalSection) {
     // we are ready to switch to the next task
     nextTimeSlice += TIME_SLICE_TICKS;
     // check if there is a ready task to switch to
@@ -116,7 +118,11 @@ void SysTick_Handler(void) {
         break;
       }
     }
-  }
+  } else if (inCriticalSection) {
+		if(rtosTickCounter - nextTimeSlice >= TIME_SLICE_TICKS){
+			nextTimeSlice++;
+		}
+	}
 }
 
 void PendSV_Handler(void) {
@@ -194,6 +200,9 @@ void rtosInit(void) {
   // set up timer variables
   rtosTickCounter = 0;
   nextTimeSlice = TIME_SLICE_TICKS;
+	
+	//initialize inCriticalSection
+	inCriticalSection = 0;
 
   // Set systick interrupt to fire at the time slice frequency
   SysTick_Config(SystemCoreClock / RTOS_TICK_FREQ);
@@ -364,4 +373,15 @@ __asm void rtosEnterFunction(void) {
 __asm void rtosExitFunction(void) {
 		POP{R4-R11}
 		BX LR
+}
+
+void rtosEnterCriticalSection(void){
+	__disable_irq();
+	inCriticalSection = 1;
+	__enable_irq();
+}
+void rtosExitCriticalSection(void){
+	__disable_irq();
+	inCriticalSection = 0;
+	__enable_irq();
 }

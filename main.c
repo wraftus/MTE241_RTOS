@@ -57,9 +57,9 @@ void ledTimerTask(void *args) {
   rtosWaitOnSemaphore(&draw_sem);
   rtosSignalSemaphore(&draw_sem);
   rtosAcquireMutex(&draw_mutex);
-  __disable_irq();
+  rtosEnterCriticalSection();
   GLCD_DisplayString(2 + readyOrder++, 0, 1, taskName);
-  __enable_irq();
+  rtosExitCriticalSection();
   rtosReleaseMutex(&draw_mutex);
 
   // wait until all other tasks are ready to go
@@ -101,9 +101,9 @@ void printTask(void *args) {
   rtosWaitOnSemaphore(&draw_sem);
   rtosSignalSemaphore(&draw_sem);
   rtosAcquireMutex(&draw_mutex);
-  __disable_irq();
+  rtosEnterCriticalSection();
   GLCD_DisplayString(2 + readyOrder++, 0, 1, taskName);
-  __enable_irq();
+  rtosExitCriticalSection();
   rtosReleaseMutex(&draw_mutex);
 
   // wait until all other tasks are ready to go
@@ -116,6 +116,7 @@ void printTask(void *args) {
     // wait for 0.5s
     rtosWait(500);
     rtosReleaseMutex(&print_mutex);
+		rtosReleaseMutex(&print_mutex);
   }
 }
 
@@ -126,13 +127,13 @@ void lazyGLCDTask(void *args) {
   // set up GLCD
   rtosAcquireMutex(&draw_mutex);
   rtosSignalSemaphore(&draw_sem);
-  __disable_irq();
+  rtosEnterCriticalSection();
   GLCD_Init();
   GLCD_SetBackColor(Black);
   GLCD_SetTextColor(White);
   GLCD_Clear(Black);
   GLCD_DisplayString(0, 0, 1, title);
-  __enable_irq();
+  rtosExitCriticalSection();
   rtosReleaseMutex(&draw_mutex);
 
   // marinate
@@ -140,15 +141,14 @@ void lazyGLCDTask(void *args) {
 
   // tell GLCD we are ready
   rtosAcquireMutex(&draw_mutex);
-  __disable_irq();
+  rtosEnterCriticalSection();
   GLCD_DisplayString(2 + readyOrder++, 0, 1, taskName);
-  __enable_irq();
+  rtosExitCriticalSection();
   rtosReleaseMutex(&draw_mutex);
 
   // wait until all other tasks are ready to go
   syncOnBarrier(&barrier);
   while(1){
-		rtosReleaseMutex(&print_mutex);
 	}
 }
 

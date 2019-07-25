@@ -49,4 +49,7 @@ void rtosWait(uint32_t ticks);
 
 void rtosEnterFunction(void);
 void rtosExitFunction(void);
+
+void rtosEnterCriticalSection(void);
+void rtosExitCriticalSection(void);
 #endif /* __RTOS_H */
