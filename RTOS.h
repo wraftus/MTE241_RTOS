@@ -5,8 +5,6 @@ typedef enum {HIGHEST_PRIORITY = 0, DEFAULT_PRIORITY = 3 , LOWEST_PRIORITY = 6, 
 
 typedef enum {RUNNING, READY, WAITING, SUSPENDED} taskState_t;
 
-const int8_t NO_OWNER = -1;
-
 typedef struct TCB_t TCB_t;
 struct TCB_t{
 	uint8_t id;
@@ -27,7 +25,7 @@ typedef void (*rtosTaskFunc_t)(void *args);
 
 typedef struct {
 	uint8_t count;
-        tcbQueue_t *waitingPriorityQueue[NUM_PRIORITIES];
+	tcbQueue_t *waitingPriorityQueue[NUM_PRIORITIES];
 } semaphore_t;
 
 typedef struct{

@@ -20,8 +20,6 @@ void task2(void *args){
 	uint32_t counter2 = 0;
 	uint8_t counter2_1 = 3;
 	uint8_t letter = 'A';
-	uint8_t test[16];
-	memset(test, 69, 16);
 	while(1){
 		printf("Task 2: %d, %d, %c!\n", counter2, counter2_1, letter);
 		rtosWait(1000);

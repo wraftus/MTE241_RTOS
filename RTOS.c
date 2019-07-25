@@ -32,6 +32,8 @@ TCB_t *runningTCB;
 tcbQueue_t *readyTaskPriorityQueue[NUM_PRIORITIES];
 tcbQueue_t *waitingTaskPriorityQueue[NUM_PRIORITIES];
 
+const int8_t NO_OWNER = -1;
+
 // This should only be called atomically
 void forceContextSwitch(){
 	rtosTickCounter = nextTimeSlice;
@@ -77,23 +79,17 @@ void SysTick_Handler(void) {
 					addToList(TCB_ptr, readyTaskPriorityQueue);
 					
 					//remove task from waiting queue
-					if(TCB_ptr == waitingTaskPriorityQueue[priority]->head){
-						if(TCB_ptr->next != NULL){//is only head
-							waitingTaskPriorityQueue[priority]->head = waitingTaskPriorityQueue[priority]->head->next;
-							TCB_ptr -> next = NULL;
-							TCB_ptr = waitingTaskPriorityQueue[priority]->head;
-						
-						} else { //is head and tail
-							waitingTaskPriorityQueue[priority]->head = NULL;
+					if(TCB_ptr == waitingTaskPriorityQueue[priority]->head){//if task is the head
+						if(TCB_ptr->next == NULL){//if its the only task in the queue
 							waitingTaskPriorityQueue[priority]->tail = NULL;
-							TCB_ptr -> next = NULL;
-							TCB_ptr = NULL;
 						}
-						
-					} else if (TCB_ptr == waitingTaskPriorityQueue[priority]->tail){ //is only tail
+						waitingTaskPriorityQueue[priority]->head = TCB_ptr->next;
+						TCB_ptr->next = NULL;
+						TCB_ptr = waitingTaskPriorityQueue[priority]->head;
+					} else if (TCB_ptr == waitingTaskPriorityQueue[priority]->tail){ //if task is that tail
 						TCB_prev_ptr->next = NULL;
-						waitingTaskPriorityQueue[priority]->tail = NULL;
-						TCB_ptr -> next = NULL;
+						waitingTaskPriorityQueue[priority]->tail = TCB_prev_ptr;
+						TCB_ptr->next = NULL;
 						TCB_ptr = NULL;
 					} else { //neither head or tail
 						TCB_prev_ptr->next = TCB_ptr->next;
@@ -113,7 +109,7 @@ void SysTick_Handler(void) {
 	rtosTickCounter++;
 	if(rtosTickCounter - nextTimeSlice >= TIME_SLICE_TICKS){
 		//we are ready to switch to the next task
-
+		nextTimeSlice += TIME_SLICE_TICKS;
 		//check if there is a ready task to switch to
 		for (taskPriority_t priority = HIGHEST_PRIORITY; priority < NUM_PRIORITIES; priority++){
 			if (readyTaskPriorityQueue[priority]->head!=NULL){
@@ -140,8 +136,8 @@ void PendSV_Handler(void){
   for (taskPriority_t priority = HIGHEST_PRIORITY; priority < NUM_PRIORITIES; priority++){
 		if (readyTaskPriorityQueue[priority]->head!=NULL){
 			runningTCB = readyTaskPriorityQueue[priority]->head;
-			if(readyTaskPriorityQueue[priority]->head->next != NULL){
-				readyTaskPriorityQueue[priority]->head = readyTaskPriorityQueue[priority]->head->next;
+			if(runningTCB->next != NULL){
+				runningTCB = readyTaskPriorityQueue[priority]->head->next;
 			} else { //priority level is now empty
   			readyTaskPriorityQueue[priority]->head = NULL;
 				readyTaskPriorityQueue[priority]->tail = NULL;
@@ -238,7 +234,9 @@ void rtosThreadNew(rtosTaskFunc_t func, void *arg, taskPriority_t taskPriority){
 void semaphoreInit(semaphore_t *sem, uint8_t count){
 	sem->count = count;
   for (taskPriority_t priority = HIGHEST_PRIORITY; priority < NUM_PRIORITIES; priority++){
-			sem->waitingPriorityQueue[priority] = NULL;
+			sem->waitingPriorityQueue[priority]->head = NULL;
+			sem->waitingPriorityQueue[priority]->tail = NULL;
+
 	}
 }
 
@@ -266,8 +264,8 @@ void signalSemaphore(semaphore_t *sem){
 		if (sem->waitingPriorityQueue[priority]->head!=NULL){
 			TCB_t *unblockedTask = sem->waitingPriorityQueue[priority]->head;
 
-			if(sem->waitingPriorityQueue[priority]->head->next != NULL){ //if not only task in list
-				sem->waitingPriorityQueue[priority]->head = sem->waitingPriorityQueue[priority]->head->next;
+			if(unblockedTask->next != NULL){ //if not only task in list
+				sem->waitingPriorityQueue[priority]->head = unblockedTask->next;
 			} else { //priority level is now empty
 				sem->waitingPriorityQueue[priority]->head = NULL;
 				sem->waitingPriorityQueue[priority]->tail = NULL;
@@ -286,7 +284,8 @@ void signalSemaphore(semaphore_t *sem){
 void mutexInit(mutex_t *mutex){
 	mutex->owner = NO_OWNER;
   for (taskPriority_t priority = HIGHEST_PRIORITY; priority < NUM_PRIORITIES; priority++){
-    mutex->waitingPriorityQueue[priority] = NULL;
+    mutex->waitingPriorityQueue[priority]->head = NULL;
+    mutex->waitingPriorityQueue[priority]->tail = NULL;
   }
 }
 
@@ -314,8 +313,8 @@ void releaseMutex(mutex_t *mutex){
     if (mutex->waitingPriorityQueue[priority]->head!=NULL){
       TCB_t *unblockedTask = mutex->waitingPriorityQueue[priority]->head;
 
-      if(mutex->waitingPriorityQueue[priority]->head->next != NULL){ //if not only task in list
-        mutex->waitingPriorityQueue[priority]->head = mutex->waitingPriorityQueue[priority]->head->next;
+      if(unblockedTask->next != NULL){ //if not only task in list
+        mutex->waitingPriorityQueue[priority]->head = unblockedTask->next;
       } else { //priority level is now empty
         mutex->waitingPriorityQueue[priority]->head = NULL;
         mutex->waitingPriorityQueue[priority]->tail = NULL;
@@ -327,7 +326,8 @@ void releaseMutex(mutex_t *mutex){
       unblockedTask->next = NULL;
       unblockedTask->state = READY;
       addToList(unblockedTask, readyTaskPriorityQueue);
-      break;
+			__enable_irq();
+      return;
     }
   }
 
