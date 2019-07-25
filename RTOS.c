@@ -363,13 +363,13 @@ rtosStatus_t rtosAcquireMutex(mutex_t *mutex) {
   return RTOS_OK;
 }
 
-void rtosReleaseMutex(mutex_t *mutex) {
+rtosStatus_t rtosReleaseMutex(mutex_t *mutex) {
   rtosEnterFunction();
   __disable_irq();
   if (mutex->owner != runningTCB->id) {
     // cannot release a mutex you do not own
 		rtosExitFunction();
-    return;
+    return RTOS_MUTEX_NOT_OWNED;
   }
 
   if (mutex->storedPriority != NO_PRIORITY){ //if need to restore unelevated priority
@@ -396,7 +396,7 @@ void rtosReleaseMutex(mutex_t *mutex) {
       addToList(unblockedTask, readyTaskPriorityQueue);
       __enable_irq();
 			rtosExitFunction();
-      return;
+      return RTOS_OK;
     }
   }
 
@@ -404,6 +404,7 @@ void rtosReleaseMutex(mutex_t *mutex) {
   mutex->owner = NO_OWNER;
   __enable_irq();
   rtosExitFunction();
+	return RTOS_OK;
 }
 
 rtosStatus_t rtosWait(uint32_t ticks) {

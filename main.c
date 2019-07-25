@@ -122,7 +122,12 @@ void printTask(void *args) {
     // wait for 1s
     rtosWait(1000);
     rtosReleaseMutex(&print_mutex);
-		rtosReleaseMutex(&print_mutex);
+		rtosStatus_t status = rtosReleaseMutex(&print_mutex);
+		if(status == RTOS_MUTEX_NOT_OWNED){
+			rtosAcquireMutex(&print_mutex);
+			printf("Oops! %s was dumb and tried to release a mutex they did not own :(\n", name);
+			rtosReleaseMutex(&print_mutex);
+		}
   }
 }
 
@@ -169,7 +174,7 @@ void lazyGLCDTask(void *args) {
 void sneakyTask(void *args){
 	rtosAcquireMutex(&draw_mutex);
 	rtosSignalSemaphore(&sneakySem);
-	rtosWait(5000);
+	rtosWait(2500);
 	rtosReleaseMutex(&draw_mutex);
 	while(1){
 	}
