@@ -1,7 +1,7 @@
-#include "RTOS.h"
-#include "context.h"
 #include <LPC17xx.h>
 #include <core_cm3.h>
+#include "RTOS.h"
+#include "context.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -55,7 +55,7 @@ void addToList(TCB_t *toAdd, tcbQueue_t *queue) {
     queue[toAdd->taskPriority].tail = toAdd;
   } else {
     queue[toAdd->taskPriority].tail->next = toAdd;
-    queue[toAdd->taskPriority].tail = toAdd->next;
+    queue[toAdd->taskPriority].tail = toAdd;
   }
 }
 
@@ -200,6 +200,7 @@ void rtosInit(void) {
 }
 
 void rtosThreadNew(rtosTaskFunc_t func, void *arg, taskPriority_t taskPriority) {
+  rtosEnterFunction();
   __disable_irq();
   if (numTasks == 0) {
     // rtos has not yet, return and notify somehow???
@@ -228,17 +229,21 @@ void rtosThreadNew(rtosTaskFunc_t func, void *arg, taskPriority_t taskPriority) 
   // bump up num tasks
   numTasks++;
   __enable_irq();
+  rtosExitFunction();
 }
 
 void semaphoreInit(semaphore_t *sem, uint8_t count) {
+  rtosEnterFunction();
   sem->count = count;
   for (taskPriority_t priority = HIGHEST_PRIORITY; priority < NUM_PRIORITIES; priority++) {
     sem->waitingPriorityQueue[priority].head = NULL;
     sem->waitingPriorityQueue[priority].tail = NULL;
   }
+  rtosExitFunction();
 }
 
 void waitOnSemaphore(semaphore_t *sem) {
+  rtosEnterFunction();
   __disable_irq();
   if (sem->count > 0) {
     // semaphore is open
@@ -250,9 +255,11 @@ void waitOnSemaphore(semaphore_t *sem) {
     forceContextSwitch();
   }
   __enable_irq();
+  rtosExitFunction();
 }
 
 void signalSemaphore(semaphore_t *sem) {
+  rtosEnterFunction();
   __disable_irq();
   sem->count++;
 
@@ -274,17 +281,21 @@ void signalSemaphore(semaphore_t *sem) {
     }
   }
   __enable_irq();
+  rtosExitFunction();
 }
 
 void mutexInit(mutex_t *mutex) {
+  rtosEnterFunction();
   mutex->owner = NO_OWNER;
   for (taskPriority_t priority = HIGHEST_PRIORITY; priority < NUM_PRIORITIES; priority++) {
     mutex->waitingPriorityQueue[priority].head = NULL;
     mutex->waitingPriorityQueue[priority].tail = NULL;
   }
+  rtosExitFunction();
 }
 
 void acquireMutex(mutex_t *mutex) {
+  rtosEnterFunction();
   __disable_irq();
   if (mutex->owner == NO_OWNER) {
     mutex->owner = runningTCB->id;
@@ -295,12 +306,15 @@ void acquireMutex(mutex_t *mutex) {
     forceContextSwitch();
   }
   __enable_irq();
+  rtosExitFunction();
 }
 
 void releaseMutex(mutex_t *mutex) {
+  rtosEnterFunction();
   __disable_irq();
   if (mutex->owner != runningTCB->id) {
     // cannot release a mutex you do not own
+		rtosExitFunction();
     return;
   }
 
@@ -320,6 +334,7 @@ void releaseMutex(mutex_t *mutex) {
       unblockedTask->state = READY;
       addToList(unblockedTask, readyTaskPriorityQueue);
       __enable_irq();
+			rtosExitFunction();
       return;
     }
   }
@@ -327,6 +342,7 @@ void releaseMutex(mutex_t *mutex) {
   // Nothing waiting on mutex
   mutex->owner = NO_OWNER;
   __enable_irq();
+  rtosExitFunction();
 }
 
 void rtosWait(uint32_t ticks) {
@@ -340,6 +356,12 @@ void rtosWait(uint32_t ticks) {
   rtosExitFunction();
 }
 
-__asm void rtosEnterFunction(void) { PUSH{R4 - R11} BX LR }
+__asm void rtosEnterFunction(void) {
+		PUSH{R4 - R11} 
+		BX LR
+}
 
-__asm void rtosExitFunction(void) { POP{R4 - R11} BX LR }
+__asm void rtosExitFunction(void) {
+		POP{R4-R11}
+		BX LR
+}
