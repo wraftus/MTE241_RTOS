@@ -23,8 +23,9 @@ barrier_t barrier;
 
 // non reusable barrier
 void syncOnBarrier(barrier_t *barrier) {
+	rtosEnterFunction();
   // increase barrier's count by acquiring the mutex
-  aquireMutex(&(barrier->mutex));
+  acquireMutex(&(barrier->mutex));
   barrier->count++;
   releaseMutex(&(barrier->mutex));
 
@@ -36,6 +37,7 @@ void syncOnBarrier(barrier_t *barrier) {
   // wait on the turnstile, and signal it when you go through
   waitOnSemaphore(&(barrier->turnstile));
   signalSemaphore(&(barrier->turnstile));
+	rtosExitFunction();
 }
 
 // Task that creates a clock on the LEDs on the board
@@ -51,12 +53,10 @@ void ledTimerTask(void *args) {
   LPC_GPIO2->FIOCLR =
       (1UL << led_pos2[0]) | (1UL << led_pos2[1]) | (1UL << led_pos2[2]) | (1UL << led_pos2[3]) | (1UL << led_pos2[4]);
 
-  uint32_t timer = 0;
-
   // tell GLCD we are ready
   waitOnSemaphore(&draw_sem);
   signalSemaphore(&draw_sem);
-  aquireMutex(&draw_mutex);
+  acquireMutex(&draw_mutex);
   __disable_irq();
   GLCD_DisplayString(2 + readyOrder++, 0, 1, taskName);
   __enable_irq();
@@ -64,6 +64,7 @@ void ledTimerTask(void *args) {
 
   // wait until all other tasks are ready to go
   syncOnBarrier(&barrier);
+	uint32_t timer = 0;
   while (1) {
     // write count to leds, going through each bit
     for (uint8_t bit = 0; bit < 8; bit++) {
@@ -99,7 +100,7 @@ void printTask(void *args) {
   // tell GLCD we are ready
   waitOnSemaphore(&draw_sem);
   signalSemaphore(&draw_sem);
-  aquireMutex(&draw_mutex);
+  acquireMutex(&draw_mutex);
   __disable_irq();
   GLCD_DisplayString(2 + readyOrder++, 0, 1, taskName);
   __enable_irq();
@@ -109,7 +110,7 @@ void printTask(void *args) {
   syncOnBarrier(&barrier);
   while (1) {
     // aquire the mutex
-    aquireMutex(&print_mutex);
+    acquireMutex(&print_mutex);
     // print out the message
     printf("Hi! My name is %s, and I currently have the mutex.\n", name);
     // wait for 0.5s
@@ -123,7 +124,7 @@ void lazyGLCDTask(void *args) {
   unsigned char taskName[] = "lazyGLCDTask";
 
   // set up GLCD
-  aquireMutex(&draw_mutex);
+  acquireMutex(&draw_mutex);
   signalSemaphore(&draw_sem);
   __disable_irq();
   GLCD_Init();
@@ -138,7 +139,7 @@ void lazyGLCDTask(void *args) {
   rtosWait(1500);
 
   // tell GLCD we are ready
-  aquireMutex(&draw_mutex);
+  acquireMutex(&draw_mutex);
   __disable_irq();
   GLCD_DisplayString(2 + readyOrder++, 0, 1, taskName);
   __enable_irq();
@@ -146,8 +147,9 @@ void lazyGLCDTask(void *args) {
 
   // wait until all other tasks are ready to go
   syncOnBarrier(&barrier);
-  while (1)
-    ;
+  while(1){
+		releaseMutex(&print_mutex);
+	}
 }
 
 int main(void) {
@@ -155,28 +157,27 @@ int main(void) {
   printf("Main Task!\n");
 
   // intialize printing mutex
-  mutextInit(&print_mutex);
+  mutexInit(&print_mutex);
   // initialize draw mutex and readyOrder
-  mutextInit(&draw_mutex);
+  mutexInit(&draw_mutex);
   semaphoreInit(&draw_sem, 0);
   readyOrder = 0;
 
   // initialize barrier type
-  mutextInit(&(barrier.mutex));
+  mutexInit(&(barrier.mutex));
   semaphoreInit(&(barrier.turnstile), 0);
   barrier.count = 0;
   barrier.n = 4;
 
   // start timer task
-  rtosThreadNew(ledTimerTask, NULL);
+  rtosThreadNew(ledTimerTask, NULL, DEFAULT_PRIORITY);
 
   // start both print tasks
-  rtosThreadNew(printTask, (void *)name1);
-  rtosThreadNew(printTask, (void *)name2);
+  rtosThreadNew(printTask, (void *)name1, DEFAULT_PRIORITY);
+  rtosThreadNew(printTask, (void *)name2, DEFAULT_PRIORITY);
 
   // start lazy GLCD task
-  rtosThreadNew(lazyGLCDTask, NULL);
+  rtosThreadNew(lazyGLCDTask, NULL, DEFAULT_PRIORITY);
 
-  while (1)
-    ;
+  while(1);
 }
