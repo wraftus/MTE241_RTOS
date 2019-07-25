@@ -410,6 +410,11 @@
               <FileType>5</FileType>
               <FilePath>.\context.h</FilePath>
             </File>
+            <File>
+              <FileName>RTOS.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\RTOS.h</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>

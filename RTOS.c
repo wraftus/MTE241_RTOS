@@ -143,14 +143,14 @@ void rtosInit(void){
 }
 
 //TODO will probably need to make this atomic
-void rtosThreadNew(rtosTaskFunc_t func, void *arg){
+rtosStatus_t rtosThreadNew(rtosTaskFunc_t func, void *arg){
 	if(numTasks == 0){
 		//rtos has not yet, return and notify somehow???
-		return;
+		return RTOS_NOT_INIT;
 	}
 	if(numTasks == MAX_NUM_TASKS){
 		//Max number of tasks reached, return and notify somehow???
-		return;
+		return RTOS_MAX_TASKS;
 	}
 
 	//Get next task block
@@ -169,14 +169,16 @@ void rtosThreadNew(rtosTaskFunc_t func, void *arg){
 
 	//bump up num tasks
 	numTasks++;
+	return RTOS_OK;
 }
 
-void semaphorInit(semaphore_t *sem, uint8_t count){
+rtosStatus_t semaphorInit(semaphore_t *sem, uint8_t count){
 	sem->count = count;
 	sem->waitListHead = NULL;
+	return RTOS_OK;
 }
 
-void waitOnSemaphor(semaphore_t *sem){
+rtosStatus_t waitOnSemaphor(semaphore_t *sem){
 	__disable_irq();
 	if(sem->count == 0){
 		//semaphore is closed, wait until it is signalled
@@ -187,9 +189,10 @@ void waitOnSemaphor(semaphore_t *sem){
 		sem->count--;
 	}
 	__enable_irq();
+	return RTOS_OK;
 }
 
-void signalSemaphor(semaphore_t *sem){
+rtosStatus_t signalSemaphor(semaphore_t *sem){
 	__disable_irq();
 	sem->count++;
 	if(sem->waitListHead != NULL){
@@ -198,13 +201,15 @@ void signalSemaphor(semaphore_t *sem){
 		sem->waitListHead = sem->waitListHead->next;
 	}
 	__enable_irq();
+	return RTOS_OK;
 }
 
-void mutextInit(mutex_t *mutex){
+rtosStatus_t mutextInit(mutex_t *mutex){
 	*mutex = -1;
+	return RTOS_OK;
 }
 
-void aquireMutex(mutex_t *mutex){
+rtosStatus_t aquireMutex(mutex_t *mutex){
 	__disable_irq();
 	while(*mutex != -1){
 		__enable_irq();
@@ -212,19 +217,25 @@ void aquireMutex(mutex_t *mutex){
 	}
 	*mutex = runningTCB->id;
 	__enable_irq();
+	return RTOS_OK;
 }
 
-void releaseMutex(mutex_t *mutex){
+rtosStatus_t releaseMutex(mutex_t *mutex){
 	if(*mutex != runningTCB->id){
 		//cannot release a mutex you do not own
-		return;
+		return RTOS_MUTEX_NOT_OWNED;
 	}
 	__disable_irq();
 	*mutex = -1;
 	__enable_irq();
+	return RTOS_OK;
 }
 
-void rtosWait(uint32_t ticks){
+rtosStatus_t rtosWait(uint32_t ticks){
+	if(numTasks == 0){
+		//rtos not initialized
+		return RTOS_NOT_INIT;
+	}
 	rtosEnterFunction();
 	__disable_irq();
 	runningTCB->waitTicks = ticks;
@@ -233,6 +244,7 @@ void rtosWait(uint32_t ticks){
 	forceContextSwitch();
 	__enable_irq();
 	rtosExitFunction();
+	return RTOS_OK;
 }
 
 __asm void rtosEnterFunction(void){

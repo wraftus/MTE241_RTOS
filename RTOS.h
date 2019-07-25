@@ -12,7 +12,7 @@
 #define PSR_OFFSET 15
 #define PSR_DEFAULT 0x01000000
 
-
+typedef enum {RTOS_OK, RTOS_NOT_INIT, RTOS_MAX_TASKS, RTOS_MUTEX_NOT_OWNED} rtosStatus_t;
 typedef enum {RUNNING, READY, WAITING, SUSPENDED} taskState_t;
 
 typedef struct TCB_t TCB_t;
@@ -35,17 +35,17 @@ typedef int8_t mutex_t;
 
 void rtosInit(void);
 
-void rtosThreadNew(rtosTaskFunc_t func, void *arg);
+rtosStatus_t rtosThreadNew(rtosTaskFunc_t func, void *arg);
 
-void semaphoreInit(semaphore_t *sem, uint32_t count);
-void waitOnSemaphore(semaphore_t *sem);
-void signalSemaphore(semaphore_t *sem);
+rtosStatus_t semaphoreInit(semaphore_t *sem, uint32_t count);
+rtosStatus_t waitOnSemaphore(semaphore_t *sem);
+rtosStatus_t signalSemaphore(semaphore_t *sem);
 
-void mutextInit(mutex_t *mutex);
-void aquireMutex(mutex_t *mutex);
-void releaseMutex(mutex_t *mutex);
+rtosStatus_t mutextInit(mutex_t *mutex);
+rtosStatus_t aquireMutex(mutex_t *mutex);
+rtosStatus_t releaseMutex(mutex_t *mutex);
 
-void rtosWait(uint32_t ticks);
+rtosStatus_t rtosWait(uint32_t ticks);
 
 void rtosEnterFunction(void);
 void rtosExitFunction(void);
