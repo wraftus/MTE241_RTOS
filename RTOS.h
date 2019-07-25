@@ -32,7 +32,7 @@ typedef struct{
 	TCB_t *waitListHead;
 } semaphore_t;
 typedef struct{
-	uint8_t owner;
+	int8_t owner;
 	TCB_t *waitListHead;
 } mutex_t;
 
