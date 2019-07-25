@@ -5,6 +5,20 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define MAX_NUM_TASKS 6
+#define MAIN_TASK_ID 0
+
+#define TASK_STACK_SIZE 1024
+#define MAIN_TASK_SIZE 2048
+
+//Position of RO (task parameter) in context "array"
+#define R0_OFFSET 8
+//Position of PC (Program Counter) in context "array"
+#define PC_OFFSET 14
+//Position of PSR (Process Status Register) in context "array"
+#define PSR_OFFSET 15
+#define PSR_DEFAULT 0x01000000
+
 uint8_t numTasks = 0;
 
 uint32_t RTOS_TICK_FREQ = 1000;
@@ -15,8 +29,8 @@ uint32_t nextTimeSlice;
 
 TCB_t TCBList[MAX_NUM_TASKS];
 TCB_t *runningTCB;
-TCB_t *readyListHead;
-TCB_t *waitListHead;
+tcbQueue_t *readyPriorityQueue[NUM_PRIORITIES];
+tcbQueue_t *waitPriorityQueue[NUM_PRIORITIES];
 
 // This should only be called atomically
 void forceContextSwitch(){
@@ -28,29 +42,27 @@ void forceContextSwitch(){
 	}
 }
 
-void addToList(TCB_t *toAdd, TCB_t **listHead){
-	if(*listHead == NULL){
-		*listHead = toAdd;
-	}
+void addToList(TCB_t *toAdd, tcbQueue_t *queue[]){
+	if(queue[toAdd->taskPriority]->head == NULL){ //empty priority list
+          queue[toAdd->taskPriority]->head = toAdd;
+          queue[toAdd->taskPriority]->tail = toAdd;
+        }
 	else{
-		TCB_t *temp = *listHead;
-		while(temp->next != NULL){
-			temp = temp->next;
-		}
-		temp->next = toAdd;
+		queue[toAdd->taskPriority]->tail->next = toAdd;
+	  queue[toAdd->taskPriority]->tail = queue[toAdd->taskPriority]->tail->next;
 	}
 }
 
 void SysTick_Handler(void) {
 	//check if any waiting tasks are done
 	TCB_t *prev = NULL;
-	TCB_t *cur = waitListHead;
+	tcbQueue_t *cur = waitPriorityQueue;
 	while(cur != NULL){
 		cur->waitTicks--;
 		if(cur->waitTicks == 0){
 			//task is done waiting!
 			cur->state = READY;
-			addToList(cur, &readyListHead);
+			addToList(cur, readyListHead);
 			//remove task
 			if(prev == NULL){
 				//first task is done
@@ -90,11 +102,21 @@ void PendSV_Handler(void){
 	//queue the current running task, pop next task
 	//TODO change state of running task to ready
 	if(runningTCB->state != WAITING){
-		addToList(runningTCB, &readyListHead);
+		addToList(runningTCB, readyPriorityQueue);
 	}
-	runningTCB = readyListHead;
-	readyListHead = readyListHead->next;
-	runningTCB->next = NULL;
+
+  for (taskPriority_t priority = HIGHEST_PRIORITY; priority < NUM_PRIORITIES; priority++){
+		if (readyPriorityQueue[priority]->head!=NULL){
+			runningTCB = readyPriorityQueue[priority]->head;
+			if(readyPriorityQueue[priority]->head->next != NULL){
+				readyPriorityQueue[priority]->head = readyPriorityQueue[priority]->head->next;
+			} else { //priority level is now empty
+				readyPriorityQueue[priority]->tail = NULL;
+			}
+			runningTCB->next = NULL;
+			break;
+		}
+	}
 
 	//software restore context of next task
 	__set_PSP(runningTCB->stackPointer);
@@ -131,8 +153,12 @@ void rtosInit(void){
 	TCBList[MAIN_TASK_ID].state = RUNNING;
 	runningTCB = &(TCBList[MAIN_TASK_ID]);
 
-	//initialize ready list to NULL
-	readyListHead = NULL;
+	//initialize Priority Queues
+	for (taskPriority_t priority = HIGHEST_PRIORITY; priority < NUM_PRIORITIES; priority++){
+		readyPriorityQueue[priority] = NULL;
+		waitPriorityQueue[priority] = NULL;
+	}
+
 
 	//set up timer variables
 	rtosTickCounter = 0;
@@ -143,32 +169,33 @@ void rtosInit(void){
 }
 
 //TODO will probably need to make this atomic
-void rtosThreadNew(rtosTaskFunc_t func, void *arg){
-	if(numTasks == 0){
-		//rtos has not yet, return and notify somehow???
-		return;
-	}
-	if(numTasks == MAX_NUM_TASKS){
-		//Max number of tasks reached, return and notify somehow???
-		return;
-	}
+void rtosThreadNew(rtosTaskFunc_t func, void *arg, taskPriority_t taskPriority){
+  if(numTasks == 0){
+    //rtos has not yet, return and notify somehow???
+    return;
+  }
+  if(numTasks == MAX_NUM_TASKS){
+    //Max number of tasks reached, return and notify somehow???
+    return;
+  }
 
-	//Get next task block
-	TCB_t *newTCB = &(TCBList[numTasks]);
+  //Get next task block
+  TCB_t *newTCB = &(TCBList[numTasks]);
 
-	//set P0 for this task's to arg
-	*((uint32_t *)newTCB->stackPointer + R0_OFFSET) = (uint32_t)arg;
-	//set PC to address of the tasks's function
-	*((uint32_t *)newTCB->stackPointer + PC_OFFSET) = (uint32_t)func;
-	//set PSR to default value (0x01000000)
-	*((uint32_t *)newTCB->stackPointer + PSR_OFFSET) = PSR_DEFAULT;
+  //set R0 for this task's to arg
+  *((uint32_t *)newTCB->stackPointer + R0_OFFSET) = (uint32_t)arg;
+  //set PC to address of the tasks's function
+  *((uint32_t *)newTCB->stackPointer + PC_OFFSET) = (uint32_t)func;
+  //set PSR to default value (0x01000000)
+  *((uint32_t *)newTCB->stackPointer + PSR_OFFSET) = PSR_DEFAULT;
 
-	//set current task to ready and put it in the list
-	newTCB->state = READY;
-	addToList(newTCB, &readyListHead);
+  //set current task to ready and put it in the list
+  newTCB->taskPriority = taskPriority;
+  newTCB->state = READY;
+  addToList(newTCB, readyPriorityQueue);
 
-	//bump up num tasks
-	numTasks++;
+  //bump up num tasks
+  numTasks++;
 }
 
 void semaphoreInit(semaphore_t *sem, uint8_t count){
@@ -248,7 +275,7 @@ void rtosWait(uint32_t ticks){
 	__disable_irq();
 	runningTCB->waitTicks = ticks;
 	runningTCB->state = WAITING;
-	addToList(runningTCB, &waitListHead);
+	addToList(runningTCB, waitPriorityQueue);
 	forceContextSwitch();
 	__enable_irq();
 	rtosExitFunction();

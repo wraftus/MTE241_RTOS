@@ -1,17 +1,6 @@
-#define MAX_NUM_TASKS 6
-#define MAIN_TASK_ID 0
 
-#define TASK_STACK_SIZE 1024
-#define MAIN_TASK_SIZE 2048
 
-//Position of RO (task parameter) in context "array"
-#define R0_OFFSET 8
-//Position of PC (Program Counter) in context "array"
-#define PC_OFFSET 14
-//Position of PSR (Process Status Register) in context "array"
-#define PSR_OFFSET 15
-#define PSR_DEFAULT 0x01000000
-
+typedef enum {HIGHEST_PRIORITY = 0, DEFAULT_PRIORITY = 3 , LOWEST_PRIORITY = 6, NUM_PRIORITIES} taskPriority_t;
 
 typedef enum {RUNNING, READY, WAITING, SUSPENDED} taskState_t;
 
@@ -20,14 +9,20 @@ struct TCB_t{
 	uint8_t id;
 	uint32_t baseOfStack;
 	uint32_t stackPointer;
+	taskPriority_t taskPriority;
 	uint32_t waitTicks;
 	taskState_t state;
 	TCB_t *next;
 };
 
+typedef struct tcbQueue {
+    TCB_t* head;
+    TCB_t* tail;
+}tcbQueue_t;
+
 typedef void (*rtosTaskFunc_t)(void *args);
 
-typedef struct{
+typedef struct {
 	uint8_t count;
 	TCB_t *waitListHead;
 } semaphore_t;
@@ -38,7 +33,7 @@ typedef struct{
 
 void rtosInit(void);
 
-void rtosThreadNew(rtosTaskFunc_t func, void *arg);
+void rtosThreadNew(rtosTaskFunc_t func, void *arg, taskPriority_t taskPriority);
 
 void semaphoreInit(semaphore_t *sem, uint32_t count);
 void waitOnSemaphore(semaphore_t *sem);
