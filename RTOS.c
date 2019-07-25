@@ -34,6 +34,8 @@ tcbQueue_t waitingTaskPriorityQueue[NUM_PRIORITIES];
 
 const int8_t NO_OWNER = -1;
 
+uint8_t inCriticalSection;
+
 // This should only be called atomically
 void forceContextSwitch() {
   rtosTickCounter = nextTimeSlice;
@@ -105,7 +107,7 @@ void SysTick_Handler(void) {
 
   // check for timeslices
   rtosTickCounter++;
-  if (rtosTickCounter - nextTimeSlice >= TIME_SLICE_TICKS) {
+  if (rtosTickCounter - nextTimeSlice >= TIME_SLICE_TICKS && !inCriticalSection) {
     // we are ready to switch to the next task
     nextTimeSlice += TIME_SLICE_TICKS;
     // check if there is a ready task to switch to
@@ -116,7 +118,11 @@ void SysTick_Handler(void) {
         break;
       }
     }
-  }
+  } else if (inCriticalSection) {
+		if(rtosTickCounter - nextTimeSlice >= TIME_SLICE_TICKS){
+			nextTimeSlice++;
+		}
+	}
 }
 
 void PendSV_Handler(void) {
@@ -194,6 +200,9 @@ void rtosInit(void) {
   // set up timer variables
   rtosTickCounter = 0;
   nextTimeSlice = TIME_SLICE_TICKS;
+	
+	//initialize inCriticalSection
+	inCriticalSection = 0;
 
   // Set systick interrupt to fire at the time slice frequency
   SysTick_Config(SystemCoreClock / RTOS_TICK_FREQ);
@@ -232,7 +241,7 @@ void rtosThreadNew(rtosTaskFunc_t func, void *arg, taskPriority_t taskPriority) 
   rtosExitFunction();
 }
 
-void semaphoreInit(semaphore_t *sem, uint8_t count) {
+void rtosSemaphoreInit(semaphore_t *sem, uint8_t count) {
   rtosEnterFunction();
   sem->count = count;
   for (taskPriority_t priority = HIGHEST_PRIORITY; priority < NUM_PRIORITIES; priority++) {
@@ -242,7 +251,7 @@ void semaphoreInit(semaphore_t *sem, uint8_t count) {
   rtosExitFunction();
 }
 
-void waitOnSemaphore(semaphore_t *sem) {
+void rtosWaitOnSemaphore(semaphore_t *sem) {
   rtosEnterFunction();
   __disable_irq();
   if (sem->count > 0) {
@@ -258,7 +267,7 @@ void waitOnSemaphore(semaphore_t *sem) {
   rtosExitFunction();
 }
 
-void signalSemaphore(semaphore_t *sem) {
+void rtosSignalSemaphore(semaphore_t *sem) {
   rtosEnterFunction();
   __disable_irq();
   sem->count++;
@@ -284,7 +293,7 @@ void signalSemaphore(semaphore_t *sem) {
   rtosExitFunction();
 }
 
-void mutexInit(mutex_t *mutex) {
+void rtosMutexInit(mutex_t *mutex) {
   rtosEnterFunction();
   mutex->owner = NO_OWNER;
   for (taskPriority_t priority = HIGHEST_PRIORITY; priority < NUM_PRIORITIES; priority++) {
@@ -294,7 +303,7 @@ void mutexInit(mutex_t *mutex) {
   rtosExitFunction();
 }
 
-void acquireMutex(mutex_t *mutex) {
+void rtosAcquireMutex(mutex_t *mutex) {
   rtosEnterFunction();
   __disable_irq();
   if (mutex->owner == NO_OWNER) {
@@ -309,7 +318,7 @@ void acquireMutex(mutex_t *mutex) {
   rtosExitFunction();
 }
 
-void releaseMutex(mutex_t *mutex) {
+void rtosReleaseMutex(mutex_t *mutex) {
   rtosEnterFunction();
   __disable_irq();
   if (mutex->owner != runningTCB->id) {
@@ -364,4 +373,15 @@ __asm void rtosEnterFunction(void) {
 __asm void rtosExitFunction(void) {
 		POP{R4-R11}
 		BX LR
+}
+
+void rtosEnterCriticalSection(void){
+	__disable_irq();
+	inCriticalSection = 1;
+	__enable_irq();
+}
+void rtosExitCriticalSection(void){
+	__disable_irq();
+	inCriticalSection = 0;
+	__enable_irq();
 }

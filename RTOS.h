@@ -37,16 +37,19 @@ void rtosInit(void);
 
 void rtosThreadNew(rtosTaskFunc_t func, void *arg, taskPriority_t taskPriority);
 
-void semaphoreInit(semaphore_t *sem, uint8_t count);
-void waitOnSemaphore(semaphore_t *sem);
-void signalSemaphore(semaphore_t *sem);
+void rtosSemaphoreInit(semaphore_t *sem, uint8_t count);
+void rtosWaitOnSemaphore(semaphore_t *sem);
+void rtosSignalSemaphore(semaphore_t *sem);
 
-void mutexInit(mutex_t *mutex);
-void acquireMutex(mutex_t *mutex);
-void releaseMutex(mutex_t *mutex);
+void rtosMutexInit(mutex_t *mutex);
+void rtosAcquireMutex(mutex_t *mutex);
+void rtosReleaseMutex(mutex_t *mutex);
 
 void rtosWait(uint32_t ticks);
 
 void rtosEnterFunction(void);
 void rtosExitFunction(void);
+
+void rtosEnterCriticalSection(void);
+void rtosExitCriticalSection(void);
 #endif /* __RTOS_H */
