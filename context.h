@@ -11,4 +11,3 @@ uint32_t storeContext(void);
 void restoreContext(uint32_t sp);
 
 #endif
-
