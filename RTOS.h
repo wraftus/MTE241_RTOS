@@ -25,8 +25,9 @@ typedef void (*rtosTaskFunc_t)(void *args);
 
 typedef struct {
 	uint8_t count;
-	TCB_t *waitListHead;
+  tcbQueue_t *waitingPriorityQueue[NUM_PRIORITIES];
 } semaphore_t;
+
 typedef struct{
 	int8_t owner;
 	TCB_t *waitListHead;

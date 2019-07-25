@@ -29,17 +29,22 @@ uint32_t nextTimeSlice;
 
 TCB_t TCBList[MAX_NUM_TASKS];
 TCB_t *runningTCB;
-tcbQueue_t *readyPriorityQueue[NUM_PRIORITIES];
-tcbQueue_t *waitPriorityQueue[NUM_PRIORITIES];
+tcbQueue_t *readyTaskPriorityQueue[NUM_PRIORITIES];
+tcbQueue_t *waitingTaskPriorityQueue[NUM_PRIORITIES];
 
 // This should only be called atomically
 void forceContextSwitch(){
 	rtosTickCounter = nextTimeSlice;
 	nextTimeSlice += TIME_SLICE_TICKS;
-	if(readyListHead != NULL){
-			//notify PendSV_Handler we are ready to switch
-		SCB->ICSR |= SCB_ICSR_PENDSVSET_Msk;
-	}
+
+        //check if there is a ready task to switch to
+        for (taskPriority_t priority = HIGHEST_PRIORITY; priority < NUM_PRIORITIES; priority++){
+          if (readyTaskPriorityQueue[priority]->head!=NULL){
+            //notify PendSV_Handler we are ready to switch
+            SCB->ICSR |= SCB_ICSR_PENDSVSET_Msk;
+          break;
+        }
+    }
 }
 
 void addToList(TCB_t *toAdd, tcbQueue_t *queue[]){
@@ -58,8 +63,8 @@ void SysTick_Handler(void) {
 
 	//iterate through all the task in order of priority and then in fifo
 	for (taskPriority_t priority = HIGHEST_PRIORITY; priority < NUM_PRIORITIES; priority++){
-		if(waitPriorityQueue[priority]->head!=NULL){
-			TCB_t *TCB_ptr = waitPriorityQueue[priority]->head;
+		if(waitingTaskPriorityQueue[priority]->head!=NULL){
+			TCB_t *TCB_ptr = waitingTaskPriorityQueue[priority]->head;
 			TCB_t *TCB_prev_ptr = NULL;
 			do {
 				//decrement time until wait ends
@@ -69,25 +74,25 @@ void SysTick_Handler(void) {
 				if(TCB_ptr->waitTicks == 0) {
 					//set state to ready and add to ready queue
 					TCB_ptr->state = READY;
-					addToList(TCB_ptr, readyPriorityQueue);
+					addToList(TCB_ptr, readyTaskPriorityQueue);
 					
 					//remove task from waiting queue
-					if(TCB_ptr == waitPriorityQueue[priority]->head){ 
+					if(TCB_ptr == waitingTaskPriorityQueue[priority]->head){
 						if(TCB_ptr->next != NULL){//is only head
-							waitPriorityQueue[priority]->head = waitPriorityQueue[priority]->head->next;
+							waitingTaskPriorityQueue[priority]->head = waitingTaskPriorityQueue[priority]->head->next;
 							TCB_ptr -> next = NULL;
-							TCB_ptr = waitPriorityQueue[priority]->head;
+							TCB_ptr = waitingTaskPriorityQueue[priority]->head;
 						
 						} else { //is head and tail
-							waitPriorityQueue[priority]->head = NULL;
-							waitPriorityQueue[priority]->tail = NULL;	
+							waitingTaskPriorityQueue[priority]->head = NULL;
+							waitingTaskPriorityQueue[priority]->tail = NULL;
 							TCB_ptr -> next = NULL;
 							TCB_ptr = NULL;
 						}
 						
-					} else if (TCB_ptr == waitPriorityQueue[priority]->tail){ //is only tail
+					} else if (TCB_ptr == waitingTaskPriorityQueue[priority]->tail){ //is only tail
 						TCB_prev_ptr->next = NULL;
-						waitPriorityQueue[priority]->tail = NULL;
+						waitingTaskPriorityQueue[priority]->tail = NULL;
 						TCB_ptr -> next = NULL;
 						TCB_ptr = NULL;
 					} else { //neither head or tail
@@ -111,7 +116,7 @@ void SysTick_Handler(void) {
 
 		//check if there is a ready task to switch to
 		for (taskPriority_t priority = HIGHEST_PRIORITY; priority < NUM_PRIORITIES; priority++){
-			if (readyPriorityQueue[priority]->head!=NULL){
+			if (readyTaskPriorityQueue[priority]->head!=NULL){
 				//notify PendSV_Handler we are ready to switch
 				SCB->ICSR |= SCB_ICSR_PENDSVSET_Msk;
 				break;
@@ -121,23 +126,25 @@ void SysTick_Handler(void) {
 }
 
 void PendSV_Handler(void){
-	//Preform context switch if we are ready to switch tasks
-	//software store context of current running task
-	runningTCB->stackPointer = storeContext();
+  //Preform context switch if we are ready to switch tasks
+  //software store context of current running task
+  runningTCB->stackPointer = storeContext();
 
-	//queue the current running task, pop next task
-	//TODO change state of running task to ready
-	if(runningTCB->state != WAITING){
-		addToList(runningTCB, readyPriorityQueue);
-	}
+  //queue the current running task
+  if(runningTCB->state != WAITING){
+     addToList(runningTCB, readyTaskPriorityQueue);
+     runningTCB->state = RUNNING;
+  }
 
+  //pop next task
   for (taskPriority_t priority = HIGHEST_PRIORITY; priority < NUM_PRIORITIES; priority++){
-		if (readyPriorityQueue[priority]->head!=NULL){
-			runningTCB = readyPriorityQueue[priority]->head;
-			if(readyPriorityQueue[priority]->head->next != NULL){
-				readyPriorityQueue[priority]->head = readyPriorityQueue[priority]->head->next;
+		if (readyTaskPriorityQueue[priority]->head!=NULL){
+			runningTCB = readyTaskPriorityQueue[priority]->head;
+			if(readyTaskPriorityQueue[priority]->head->next != NULL){
+				readyTaskPriorityQueue[priority]->head = readyTaskPriorityQueue[priority]->head->next;
 			} else { //priority level is now empty
-				readyPriorityQueue[priority]->tail = NULL;
+  			readyTaskPriorityQueue[priority]->head = NULL;
+				readyTaskPriorityQueue[priority]->tail = NULL;
 			}
 			runningTCB->next = NULL;
 			break;
@@ -185,8 +192,8 @@ void rtosInit(void){
 
 	//initialize Priority Queues
 	for (taskPriority_t priority = HIGHEST_PRIORITY; priority < NUM_PRIORITIES; priority++){
-		readyPriorityQueue[priority] = NULL;
-		waitPriorityQueue[priority] = NULL;
+		readyTaskPriorityQueue[priority] = NULL;
+		waitingTaskPriorityQueue[priority] = NULL;
 	}
 
 	//set up timer variables
@@ -221,7 +228,7 @@ void rtosThreadNew(rtosTaskFunc_t func, void *arg, taskPriority_t taskPriority){
   //set current task to ready and put it in the list
   newTCB->taskPriority = taskPriority;
   newTCB->state = READY;
-  addToList(newTCB, readyPriorityQueue);
+  addToList(newTCB, readyTaskPriorityQueue);
 
   //bump up num tasks
   numTasks++;
@@ -230,7 +237,9 @@ void rtosThreadNew(rtosTaskFunc_t func, void *arg, taskPriority_t taskPriority){
 
 void semaphoreInit(semaphore_t *sem, uint8_t count){
 	sem->count = count;
-	sem->waitListHead = NULL;
+  for (taskPriority_t priority = HIGHEST_PRIORITY; priority < NUM_PRIORITIES; priority++){
+			sem->waitingPriorityQueue[priority] = NULL;
+	}
 }
 
 void waitOnSemaphore(semaphore_t *sem){
@@ -242,7 +251,7 @@ void waitOnSemaphore(semaphore_t *sem){
 	else{
 		//semaphore is closed, wait until it is signalled
 		runningTCB->state = WAITING;
-		addToList(runningTCB, &(sem->waitListHead));
+		addToList(runningTCB, sem->waitingPriorityQueue);
 		forceContextSwitch();
 	}
 	__enable_irq();
@@ -251,12 +260,25 @@ void waitOnSemaphore(semaphore_t *sem){
 void signalSemaphore(semaphore_t *sem){
 	__disable_irq();
 	sem->count++;
-	if(sem->waitListHead != NULL){
-		TCB_t *temp = sem->waitListHead->next;
-		sem->waitListHead->next = NULL;
-		sem->waitListHead->state = READY;
-		addToList(sem->waitListHead, readyPriorityQueue);
-		sem->waitListHead = temp;
+
+	//check if there is a task waiting for semaphore
+  for (taskPriority_t priority = HIGHEST_PRIORITY; priority < NUM_PRIORITIES; priority++){
+		if (sem->waitingPriorityQueue[priority]->head!=NULL){
+			TCB_t *unblockedTask = sem->waitingPriorityQueue[priority]->head;
+
+			if(sem->waitingPriorityQueue[priority]->head->next != NULL){ //if not only task in list
+				sem->waitingPriorityQueue[priority]->head = sem->waitingPriorityQueue[priority]->head->next;
+			} else { //priority level is now empty
+				sem->waitingPriorityQueue[priority]->head = NULL;
+				sem->waitingPriorityQueue[priority]->tail = NULL;
+			}
+
+			//set task to ready state and queue in ready task queue
+			unblockedTask->next = NULL;
+			unblockedTask->state = READY;
+			addToList(unblockedTask, readyTaskPriorityQueue);
+			break;
+		}
 	}
 	__enable_irq();
 }
@@ -294,7 +316,7 @@ void releaseMutex(mutex_t *mutex){
 		TCB_t* temp = mutex->waitListHead->next;
 		mutex->waitListHead->next = NULL;
 		mutex->waitListHead->state = READY;
-		addToList(mutex->waitListHead, readyPriorityQueue);
+		addToList(mutex->waitListHead, readyTaskPriorityQueue);
 		mutex->waitListHead = temp;
 	}
 	__enable_irq();
@@ -305,7 +327,7 @@ void rtosWait(uint32_t ticks){
 	__disable_irq();
 	runningTCB->waitTicks = ticks;
 	runningTCB->state = WAITING;
-	addToList(runningTCB, waitPriorityQueue);
+	addToList(runningTCB, waitingTaskPriorityQueue);
 	forceContextSwitch();
 	__enable_irq();
 	rtosExitFunction();
