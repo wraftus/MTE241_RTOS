@@ -1,7 +1,7 @@
-#include "RTOS.h"
-#include "context.h"
 #include <LPC17xx.h>
 #include <core_cm3.h>
+#include "RTOS.h"
+#include "context.h"
 #include <stdlib.h>
 #include <string.h>
 
