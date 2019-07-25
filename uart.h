@@ -16,52 +16,51 @@
  * notification. NXP Semiconductors also make no representation or
  * warranty that such application will be suitable for the specified
  * use without further testing or modification.
-****************************************************************************/
-#ifndef __UART_H 
+ ****************************************************************************/
+#ifndef __UART_H
 #define __UART_H
 
 #include <stdint.h>
 
-#define IER_RBR		0x01
-#define IER_THRE	0x02
-#define IER_RLS		0x04
+#define IER_RBR 0x01
+#define IER_THRE 0x02
+#define IER_RLS 0x04
 
-#define IIR_PEND	0x01
-#define IIR_RLS		0x03
-#define IIR_RDA		0x02
-#define IIR_CTI		0x06
-#define IIR_THRE	0x01
+#define IIR_PEND 0x01
+#define IIR_RLS 0x03
+#define IIR_RDA 0x02
+#define IIR_CTI 0x06
+#define IIR_THRE 0x01
 
-#define LSR_RDR		0x01
-#define LSR_OE		0x02
-#define LSR_PE		0x04
-#define LSR_FE		0x08
-#define LSR_BI		0x10
-#define LSR_THRE	0x20
-#define LSR_TEMT	0x40
-#define LSR_RXFE	0x80
+#define LSR_RDR 0x01
+#define LSR_OE 0x02
+#define LSR_PE 0x04
+#define LSR_FE 0x08
+#define LSR_BI 0x10
+#define LSR_THRE 0x20
+#define LSR_TEMT 0x40
+#define LSR_RXFE 0x80
 
-#define BUFSIZE		0x40
+#define BUFSIZE 0x40
 
 #ifndef FALSE
-#define FALSE   (0)
+#define FALSE (0)
 #endif
 
 #ifndef TRUE
-#define TRUE    (1)
+#define TRUE (1)
 #endif
 
+void UART0_IRQHandler(void);
+void UART1_IRQHandler(void);
 
-void UART0_IRQHandler( void );
-void UART1_IRQHandler( void );
+uint32_t UARTInit(uint32_t portNum, uint32_t Baudrate);
 
-uint32_t UARTInit( uint32_t portNum, uint32_t Baudrate );
+void UARTSend(uint32_t portNum, uint8_t *BufferPtr, uint32_t Length);
+uint32_t UARTRecieve(uint32_t portNum, uint8_t *BufferPtr, uint32_t Length);
 
-void     UARTSend(    uint32_t portNum, uint8_t *BufferPtr, uint32_t Length );
-uint32_t UARTRecieve( uint32_t portNum, uint8_t *BufferPtr, uint32_t Length );
-
-void     UARTSendChar(    uint32_t portNum, uint8_t character );
-uint8_t  UARTReceiveChar( uint32_t portNum );
+void UARTSendChar(uint32_t portNum, uint8_t character);
+uint8_t UARTReceiveChar(uint32_t portNum);
 
 #endif /* end __UART_H */
 /*****************************************************************************
