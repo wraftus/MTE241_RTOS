@@ -25,12 +25,12 @@ typedef void (*rtosTaskFunc_t)(void *args);
 
 typedef struct {
 	uint8_t count;
-	tcbQueue_t *waitingPriorityQueue[NUM_PRIORITIES];
+	tcbQueue_t waitingPriorityQueue[NUM_PRIORITIES];
 } semaphore_t;
 
 typedef struct{
 	int8_t owner;
-        tcbQueue_t *waitingPriorityQueue[NUM_PRIORITIES];
+	tcbQueue_t waitingPriorityQueue[NUM_PRIORITIES];
 } mutex_t;
 
 void rtosInit(void);
