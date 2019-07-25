@@ -146,17 +146,22 @@
         <Ww>
           <count>0</count>
           <WinNumber>1</WinNumber>
-          <ItemText>counter2</ItemText>
+          <ItemText>runningTCB</ItemText>
         </Ww>
         <Ww>
           <count>1</count>
           <WinNumber>1</WinNumber>
-          <ItemText>ready</ItemText>
+          <ItemText>readyTaskPriorityQueue</ItemText>
         </Ww>
         <Ww>
           <count>2</count>
           <WinNumber>1</WinNumber>
-          <ItemText>readyTaskPriorityQueue</ItemText>
+          <ItemText>waitingTaskPriorityQueue</ItemText>
+        </Ww>
+        <Ww>
+          <count>3</count>
+          <WinNumber>1</WinNumber>
+          <ItemText>\\MrRTOS\RTOS.c\TCBList</ItemText>
         </Ww>
       </WatchWindow1>
       <MemoryWindow1>
