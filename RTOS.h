@@ -46,3 +46,6 @@ void aquireMutex(mutex_t *mutex);
 void releaseMutex(mutex_t *mutex);
 
 void rtosWait(uint32_t ticks);
+
+void rtosEnterFunction(void);
+void rtosExitFunction(void);
