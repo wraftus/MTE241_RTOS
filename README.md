@@ -1,2 +1,4 @@
-# MTE241_RTOS
-Custom RTOS for MTE 241 Final Lab, by Walter Raftus and Melvin Wang
+# MrRTOS
+Custom RTOS implementing FPP Context Switching, Locking Semaphores, Mutexes with Priority Inheritance, and more. 
+
+Written by Walter Raftus and Melvin Wang
